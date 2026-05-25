@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Specification-Title: Guaniao
+Specification-Vendor: keletu
+Specification-Version: 1
+Implementation-Title: guaniao
+Implementation-Version: 0.1.0
+Implementation-Vendor: keletu
+Implementation-Timestamp: 2026-05-21T22:29:14+0800
+

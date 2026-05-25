@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#guaniao:sparrow_habitat",
+  "spawners": {
+    "type": "guaniao:sparrow",
+    "weight": 18,
+    "minCount": 5,
+    "maxCount": 10
+  }
+}

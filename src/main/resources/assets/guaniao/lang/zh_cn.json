@@ -1,0 +1,23 @@
+{
+  "entity.guaniao.night_heron": "夜鹭",
+  "entity.guaniao.sparrow": "麻雀",
+  "item.guaniao.night_heron_spawn_egg": "夜鹭刷怪蛋",
+  "item.guaniao.sparrow_spawn_egg": "麻雀刷怪蛋",
+  "item.guaniao.breadcrumbs": "面包屑",
+  "item.guaniao.bird_guide": "观鸟图鉴",
+  "itemGroup.guaniao.main": "观鸟",
+  "gui.guaniao.bird_guide.title": "观鸟图鉴",
+  "gui.guaniao.bird_guide.close": "关闭",
+  "gui.guaniao.bird_guide.species": "物种名录",
+  "gui.guaniao.bird_guide.scroll_hint": "滚轮查看更多记录",
+  "gui.guaniao.bird_guide.drag_hint": "拖动模型旋转",
+  "gui.guaniao.bird_guide.preview_hint": "观察区",
+  "gui.guaniao.bird_guide.entry.night_heron.title": "夜鹭",
+  "gui.guaniao.bird_guide.entry.night_heron.subtitle": "水边夜班渔夫",
+  "gui.guaniao.bird_guide.entry.night_heron.intro.title": "小记",
+  "gui.guaniao.bird_guide.entry.night_heron.intro.body": "白天它像一截灰树枝，站在水边装作谁也没看见；天一暗，就开始沿岸上夜班。起飞时先用力振几下，再借风滑出去，像是不慌不忙地把自己交给夜色。",
+  "gui.guaniao.bird_guide.entry.sparrow.title": "麻雀",
+  "gui.guaniao.bird_guide.entry.sparrow.subtitle": "屋檐下的小吵闹",
+  "gui.guaniao.bird_guide.entry.sparrow.intro.title": "小记",
+  "gui.guaniao.bird_guide.entry.sparrow.intro.body": "麻雀不稀奇，但少了它，村子会安静得不太像村子。它们蹦来蹦去，啄两口又抬头看你；面包屑一落地，先是一只装作路过，随后整群都想起自己刚好有事。"
+}

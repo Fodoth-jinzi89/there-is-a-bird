@@ -1,0 +1,23 @@
+{
+  "entity.guaniao.night_heron": "Black-crowned Night Heron",
+  "entity.guaniao.sparrow": "Sparrow",
+  "item.guaniao.night_heron_spawn_egg": "Black-crowned Night Heron Spawn Egg",
+  "item.guaniao.sparrow_spawn_egg": "Sparrow Spawn Egg",
+  "item.guaniao.breadcrumbs": "Breadcrumbs",
+  "item.guaniao.bird_guide": "Bird Guide",
+  "itemGroup.guaniao.main": "Guaniao",
+  "gui.guaniao.bird_guide.title": "Bird Guide",
+  "gui.guaniao.bird_guide.close": "Close",
+  "gui.guaniao.bird_guide.species": "Birds",
+  "gui.guaniao.bird_guide.scroll_hint": "Scroll for more notes",
+  "gui.guaniao.bird_guide.drag_hint": "Drag to rotate model",
+  "gui.guaniao.bird_guide.preview_hint": "Observation area",
+  "gui.guaniao.bird_guide.entry.night_heron.title": "Black-crowned Night Heron",
+  "gui.guaniao.bird_guide.entry.night_heron.subtitle": "Waterside night fisher",
+  "gui.guaniao.bird_guide.entry.night_heron.intro.title": "Note",
+  "gui.guaniao.bird_guide.entry.night_heron.intro.body": "By day it passes for a gray branch by the water. After dusk it starts its quiet shift, beating its wings hard at first, then gliding off as if the dark had somewhere to carry it.",
+  "gui.guaniao.bird_guide.entry.sparrow.title": "Sparrow",
+  "gui.guaniao.bird_guide.entry.sparrow.subtitle": "Little noise under the eaves",
+  "gui.guaniao.bird_guide.entry.sparrow.intro.title": "Note",
+  "gui.guaniao.bird_guide.entry.sparrow.intro.body": "A sparrow is common, but a village feels wrong without it. It hops, pecks, checks on you, and when crumbs hit the ground one bird pretends to wander over before the rest remember they are busy too."
+}

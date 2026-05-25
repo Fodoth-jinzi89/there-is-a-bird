@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "All Rights Reserved"
+issueTrackerURL = ""
+
+[[mods]]
+modId = "guaniao"
+version = "${file.jarVersion}"
+displayName = "\u89c2\u9e1f"
+authors = "keletu"
+description = '''
+A clean Forge 1.20.1 mob mod workspace.
+The old PvZ content has been removed so this project can move forward
+as the new bird-themed mod, Guaniao.
+'''
+
+[[dependencies.guaniao]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.guaniao]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.guaniao]]
+modId = "geckolib"
+mandatory = true
+versionRange = "[4.4,)"
+ordering = "AFTER"
+side = "BOTH"
