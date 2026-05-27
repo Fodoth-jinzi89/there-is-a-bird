@@ -1,6 +1,8 @@
 package EdDYON.guaniao.registry;
 
 import EdDYON.guaniao.content.feed.BreadcrumbPileBlock;
+import EdDYON.guaniao.content.cage.BirdCageBlock;
+import EdDYON.guaniao.content.cage.BirdCageVariant;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -16,7 +18,17 @@ public final class GuaniaoBlocks {
                     .instabreak()
                     .sound(SoundType.SAND)
                     .randomTicks()));
+    public static final RegistryObject<Block> SMALL_BIRD_CAGE = registerBirdCage(BirdCageVariant.SMALL);
+    public static final RegistryObject<Block> MEDIUM_BIRD_CAGE = registerBirdCage(BirdCageVariant.MEDIUM);
+    public static final RegistryObject<Block> LARGE_BIRD_CAGE = registerBirdCage(BirdCageVariant.LARGE);
 
     private GuaniaoBlocks() {
+    }
+
+    private static RegistryObject<Block> registerBirdCage(BirdCageVariant variant) {
+        return BLOCKS.register(variant.id(), () -> new BirdCageBlock(variant, BlockBehaviour.Properties.of()
+                .strength(1.5f)
+                .sound(SoundType.WOOD)
+                .noOcclusion()));
     }
 }

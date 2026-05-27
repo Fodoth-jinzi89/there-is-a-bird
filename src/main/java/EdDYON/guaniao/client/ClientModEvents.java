@@ -1,7 +1,9 @@
 package EdDYON.guaniao.client;
 
+import EdDYON.guaniao.client.cage.BirdCageRenderer;
 import EdDYON.guaniao.client.entity.nightheron.NightHeronRenderer;
 import EdDYON.guaniao.client.entity.sparrow.SparrowRenderer;
+import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoBlocks;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -22,6 +24,7 @@ public final class ClientModEvents {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.NIGHT_HERON.get(), NightHeronRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPARROW.get(), SparrowRenderer::new);
+        event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_CAGE.get(), BirdCageRenderer::new);
     }
 
     @SubscribeEvent

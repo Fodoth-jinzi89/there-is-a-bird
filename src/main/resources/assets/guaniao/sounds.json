@@ -1,0 +1,40 @@
+{
+  "entity.night_heron.ambient": {
+    "subtitle": "subtitles.guaniao.entity.night_heron.ambient",
+    "sounds": [
+      {
+        "name": "guaniao:entity/night_heron/wa_1",
+        "weight": 10
+      },
+      {
+        "name": "guaniao:entity/night_heron/wa_2",
+        "weight": 9
+      },
+      {
+        "name": "guaniao:entity/night_heron/creak",
+        "weight": 1
+      }
+    ]
+  },
+  "entity.night_heron.hurt": {
+    "subtitle": "subtitles.guaniao.entity.night_heron.hurt",
+    "sounds": [
+      "guaniao:entity/night_heron/wa_1",
+      "guaniao:entity/night_heron/wa_2"
+    ]
+  },
+  "entity.night_heron.death": {
+    "subtitle": "subtitles.guaniao.entity.night_heron.death",
+    "sounds": [
+      "guaniao:entity/night_heron/death_1",
+      "guaniao:entity/night_heron/death_2",
+      "guaniao:entity/night_heron/death_3"
+    ]
+  },
+  "entity.night_heron.attack": {
+    "subtitle": "subtitles.guaniao.entity.night_heron.attack",
+    "sounds": [
+      "guaniao:entity/night_heron/attack"
+    ]
+  }
+}

@@ -12,6 +12,7 @@ import EdDYON.guaniao.content.bird.nightheron.NightHeronIdleGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronRoostFlightGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronRoostGoal;
 import EdDYON.guaniao.content.bird.species.NightHeronProfile;
+import EdDYON.guaniao.registry.GuaniaoSoundEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -235,15 +236,15 @@ implements GeoEntity {
     }
 
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.FROG_AMBIENT;
+        return GuaniaoSoundEvents.NIGHT_HERON_AMBIENT.get();
     }
 
     protected SoundEvent getHurtSound(DamageSource damageSource) {
-        return SoundEvents.PARROT_HURT;
+        return GuaniaoSoundEvents.NIGHT_HERON_HURT.get();
     }
 
     protected SoundEvent getDeathSound() {
-        return SoundEvents.PARROT_DEATH;
+        return GuaniaoSoundEvents.NIGHT_HERON_DEATH.get();
     }
 
     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
@@ -489,6 +490,7 @@ implements GeoEntity {
 
     void afterPreyStrike() {
         this.preyStrikeCooldown = 45;
+        this.playSound(GuaniaoSoundEvents.NIGHT_HERON_ATTACK.get(), 0.65f, 0.9f + this.getRandom().nextFloat() * 0.18f);
         this.heal(0.5f);
     }
 
