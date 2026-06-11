@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -166,6 +167,9 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     private static int habitatScore(LevelReader level, BlockPos origin, boolean urbanBias) {
         int score = 0;
         for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-7, -2, -7), origin.offset(7, 5, 7))) {
+            if (!canReadChunk(level, pos)) {
+                continue;
+            }
             BlockState state = level.getBlockState(pos);
             if (state.is(Blocks.FARMLAND) || state.is(Blocks.WHEAT) || state.getBlock() instanceof CropBlock) {
                 score += urbanBias ? 2 : 4;
@@ -185,6 +189,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return score;
     }
 
+    private static boolean canReadChunk(LevelReader level, BlockPos pos) {
+        return level.hasChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal((Mob)this));
@@ -194,11 +202,12 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.goalSelector.addGoal(4, new ColumbidChaseSmallBirdGoal(this));
         this.goalSelector.addGoal(5, new ColumbidPairBondGoal(this));
         this.goalSelector.addGoal(6, new ColumbidFlockOrPairGoal(this));
-        this.goalSelector.addGoal(7, new ColumbidAmbientFlightGoal(this));
-        this.goalSelector.addGoal(8, new ColumbidGroundForagingGoal(this));
-        this.goalSelector.addGoal(9, new ColumbidIdleGoal(this));
-        this.goalSelector.addGoal(10, new LookAtPlayerGoal((Mob)this, Player.class, 6.0F));
-        this.goalSelector.addGoal(11, new RandomLookAroundGoal((Mob)this));
+        this.goalSelector.addGoal(7, new ColumbidCourtshipGoal(this));
+        this.goalSelector.addGoal(8, new ColumbidAmbientFlightGoal(this));
+        this.goalSelector.addGoal(9, new ColumbidGroundForagingGoal(this));
+        this.goalSelector.addGoal(10, new ColumbidIdleGoal(this));
+        this.goalSelector.addGoal(11, new LookAtPlayerGoal((Mob)this, Player.class, 6.0F));
+        this.goalSelector.addGoal(12, new RandomLookAroundGoal((Mob)this));
     }
 
     @Override
@@ -289,20 +298,21 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (this.level().isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
+        ItemStack offeredStack = stack.copy();
+        float chance = this.tamingChance(offeredStack);
         if (!player.getAbilities().instabuild) {
             stack.shrink(1);
         }
         this.birdBrain.onEat(0.18F);
-        this.seedTrustTicks = Math.max(this.seedTrustTicks, 700);
         this.triggerEatingAnimation(28);
         if (this.isTame()) {
+            this.seedTrustTicks = Math.max(this.seedTrustTicks, 700);
             if (this.getHealth() < this.getMaxHealth()) {
                 this.heal(2.0F);
             }
             this.spawnTrustParticles(true);
             return InteractionResult.SUCCESS;
         }
-        float chance = this.tamingChance(stack);
         if (this.getRandom().nextFloat() < chance) {
             this.tame(player);
             this.setPersistenceRequired();
@@ -311,6 +321,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         } else {
             this.spawnTrustParticles(false);
         }
+        this.seedTrustTicks = Math.max(this.seedTrustTicks, 700);
         return InteractionResult.SUCCESS;
     }
 
@@ -570,6 +581,12 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             return;
         }
         serverLevel.sendParticles(success ? ParticleTypes.HEART : ParticleTypes.SMOKE, this.getX(), this.getY() + 0.6D, this.getZ(), 6, 0.25D, 0.25D, 0.25D, 0.02D);
+    }
+
+    private void spawnCourtshipParticles(int count) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.HEART, this.getX(), this.getY() + 0.7D, this.getZ(), count, 0.25D, 0.25D, 0.25D, 0.01D);
+        }
     }
 
     private void triggerEatingAnimation(int ticks) {
@@ -896,10 +913,22 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             return Optional.empty();
         }
         Entity entity = serverLevel.getEntity(this.pairPartnerUUID);
-        if (entity instanceof AbstractColumbidEntity columbid && columbid.isAlive()) {
+        if (entity instanceof AbstractColumbidEntity columbid && columbid.isAlive() && columbid.getClass() == this.getClass()) {
             return Optional.of(columbid);
         }
         return Optional.empty();
+    }
+
+    private boolean isPairedWith(Entity entity) {
+        return entity != null && this.pairPartnerUUID != null && this.pairPartnerUUID.equals(entity.getUUID());
+    }
+
+    private boolean hasReciprocalPairWith(AbstractColumbidEntity other) {
+        return other != null
+                && this.pairPartnerUUID != null
+                && this.pairPartnerUUID.equals(other.getUUID())
+                && other.pairPartnerUUID != null
+                && other.pairPartnerUUID.equals(this.getUUID());
     }
 
     private void faceFlightDirection(Vec3 movement) {
@@ -1323,8 +1352,15 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         public void start() {
             this.columbid.pairScanCooldown = 180 + this.columbid.getRandom().nextInt(160);
             Optional<AbstractColumbidEntity> current = this.columbid.pairPartner();
+            if (current.isEmpty() && this.columbid.pairPartnerUUID != null) {
+                this.columbid.pairPartnerUUID = null;
+                this.columbid.pairLostTicks = 0;
+            }
             if (current.isPresent()) {
-                if (this.columbid.distanceToSqr(current.get()) > 625.0D) {
+                if (!this.columbid.hasReciprocalPairWith(current.get())) {
+                    this.columbid.pairPartnerUUID = null;
+                    this.columbid.pairLostTicks = 0;
+                } else if (this.columbid.distanceToSqr(current.get()) > 625.0D) {
                     if (++this.columbid.pairLostTicks > 8) {
                         this.columbid.pairPartnerUUID = null;
                         this.columbid.pairLostTicks = 0;
@@ -1332,26 +1368,38 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                 } else {
                     this.columbid.pairLostTicks = 0;
                 }
-                return;
+                if (this.columbid.pairPartnerUUID != null) {
+                    return;
+                }
             }
-            List<AbstractColumbidEntity> nearby = this.columbid.level().getEntitiesOfClass(AbstractColumbidEntity.class, this.columbid.getBoundingBox().inflate(16.0D), other -> other.getClass() == this.columbid.getClass() && other != this.columbid && other.isAlive() && !other.isTame());
+            List<AbstractColumbidEntity> nearby = this.columbid.level().getEntitiesOfClass(AbstractColumbidEntity.class, this.columbid.getBoundingBox().inflate(16.0D), other -> other.getClass() == this.columbid.getClass() && other != this.columbid && other.isAlive() && !other.isTame() && other.pairPartnerUUID == null);
             if (nearby.isEmpty()) {
                 return;
             }
             AbstractColumbidEntity partner = nearby.get(this.columbid.getRandom().nextInt(nearby.size()));
+            if (this.columbid.pairPartnerUUID != null || partner.pairPartnerUUID != null) {
+                return;
+            }
             this.columbid.pairPartnerUUID = partner.getUUID();
             partner.pairPartnerUUID = this.columbid.getUUID();
+            partner.pairScanCooldown = Math.max(partner.pairScanCooldown, 180);
+            this.columbid.setBehaviorStateFor(ColumbidBehaviorState.COURTING, 45);
+            partner.setBehaviorStateFor(ColumbidBehaviorState.COURTING, 45);
+            this.columbid.spawnCourtshipParticles(3);
+            partner.spawnCourtshipParticles(3);
         }
     }
 
     private static class ColumbidFlockOrPairGoal extends Goal {
         private final AbstractColumbidEntity columbid;
+        private AbstractColumbidEntity socialTarget;
         private Vec3 target;
         private int moveTicks;
+        private boolean followingPartner;
 
         ColumbidFlockOrPairGoal(AbstractColumbidEntity columbid) {
             this.columbid = columbid;
-            this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
 
         @Override
@@ -1363,6 +1411,8 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             if (partner.isPresent()) {
                 double distance = this.columbid.distanceToSqr(partner.get());
                 if (distance > 18.0D && distance < 196.0D) {
+                    this.socialTarget = partner.get();
+                    this.followingPartner = true;
                     this.target = partner.get().position().add(this.columbid.randomSigned(1.2D), 0.0D, this.columbid.randomSigned(1.2D));
                     return true;
                 }
@@ -1374,10 +1424,14 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             AbstractColumbidEntity other = flock.get(this.columbid.getRandom().nextInt(flock.size()));
             Vec3 away = this.columbid.position().subtract(other.position()).multiply(1.0D, 0.0D, 1.0D);
             if (this.columbid.distanceToSqr(other) < 2.6D && away.lengthSqr() > 1.0E-4D) {
+                this.socialTarget = other;
+                this.followingPartner = false;
                 this.target = this.columbid.position().add(away.normalize().scale(2.6D));
                 return true;
             }
             if (this.columbid.distanceToSqr(other) > 36.0D) {
+                this.socialTarget = other;
+                this.followingPartner = false;
                 this.target = other.position();
                 return true;
             }
@@ -1386,7 +1440,13 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
 
         @Override
         public boolean canContinueToUse() {
-            return this.moveTicks > 0 && this.target != null && !this.columbid.getNavigation().isDone();
+            return this.moveTicks > 0
+                    && this.target != null
+                    && this.socialTarget != null
+                    && this.socialTarget.isAlive()
+                    && !this.columbid.isControlledFlightActive()
+                    && this.columbid.canStartGroundSocialGoal()
+                    && (!this.followingPartner || this.columbid.hasReciprocalPairWith(this.socialTarget));
         }
 
         @Override
@@ -1399,14 +1459,135 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         @Override
         public void tick() {
             --this.moveTicks;
+            this.columbid.getLookControl().setLookAt(this.socialTarget, 18.0F, 18.0F);
+            if (this.followingPartner && this.moveTicks % 18 == 0) {
+                double distanceSqr = this.columbid.distanceToSqr(this.socialTarget);
+                if (distanceSqr > 20.0D) {
+                    this.target = this.socialTarget.position().add(this.columbid.randomSigned(1.4D), 0.0D, this.columbid.randomSigned(1.4D));
+                    this.columbid.getNavigation().moveTo(this.target.x, this.target.y, this.target.z, 0.78D);
+                } else if (distanceSqr < 2.4D) {
+                    Vec3 away = this.columbid.position().subtract(this.socialTarget.position()).multiply(1.0D, 0.0D, 1.0D);
+                    if (away.lengthSqr() > 1.0E-4D) {
+                        this.target = this.columbid.position().add(away.normalize().scale(1.8D));
+                        this.columbid.getNavigation().moveTo(this.target.x, this.target.y, this.target.z, 0.62D);
+                    }
+                }
+            }
         }
 
         @Override
         public void stop() {
+            this.socialTarget = null;
             this.target = null;
+            this.followingPartner = false;
             if (this.columbid.getBehaviorState() == ColumbidBehaviorState.PAIR_FOLLOWING) {
                 this.columbid.setBehaviorState(ColumbidBehaviorState.IDLE);
             }
+        }
+    }
+
+    private static class ColumbidCourtshipGoal extends Goal {
+        private final AbstractColumbidEntity columbid;
+        private AbstractColumbidEntity partner;
+        private int courtshipTicks;
+        private int stepCooldown;
+
+        ColumbidCourtshipGoal(AbstractColumbidEntity columbid) {
+            this.columbid = columbid;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            if (!this.columbid.supportsPairBond()
+                    || this.columbid.isTame()
+                    || this.columbid.courtshipCooldown > 0
+                    || !this.columbid.canStartGroundSocialGoal()
+                    || this.columbid.getRandom().nextInt(220) != 0) {
+                return false;
+            }
+            Optional<AbstractColumbidEntity> currentPartner = this.columbid.pairPartner();
+            if (currentPartner.isEmpty() || !this.columbid.hasReciprocalPairWith(currentPartner.get())) {
+                return false;
+            }
+            double distanceSqr = this.columbid.distanceToSqr(currentPartner.get());
+            if (distanceSqr < 1.8D || distanceSqr > 81.0D) {
+                return false;
+            }
+            this.partner = currentPartner.get();
+            return true;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return this.courtshipTicks > 0
+                    && this.partner != null
+                    && this.partner.isAlive()
+                    && this.columbid.canStartGroundSocialGoal()
+                    && this.columbid.hasReciprocalPairWith(this.partner)
+                    && this.columbid.distanceToSqr(this.partner) < 100.0D;
+        }
+
+        @Override
+        public void start() {
+            this.courtshipTicks = 80 + this.columbid.getRandom().nextInt(81);
+            this.stepCooldown = 0;
+            this.columbid.courtshipCooldown = 760 + this.columbid.getRandom().nextInt(760);
+            this.columbid.setBehaviorStateFor(ColumbidBehaviorState.COURTING, Math.min(this.courtshipTicks, 90));
+            this.partner.setBehaviorStateFor(ColumbidBehaviorState.COURTING, 45);
+            this.columbid.spawnCourtshipParticles(3);
+        }
+
+        @Override
+        public void tick() {
+            --this.courtshipTicks;
+            if (this.stepCooldown > 0) {
+                --this.stepCooldown;
+            }
+            this.columbid.getLookControl().setLookAt(this.partner, 26.0F, 26.0F);
+            this.partner.getLookControl().setLookAt(this.columbid, 22.0F, 22.0F);
+            if (this.courtshipTicks % 42 == 0) {
+                this.columbid.spawnCourtshipParticles(2);
+            }
+            double distanceSqr = this.columbid.distanceToSqr(this.partner);
+            if (distanceSqr > 20.0D) {
+                this.columbid.getNavigation().moveTo(this.partner, 0.68D);
+                return;
+            }
+            if (distanceSqr < 2.2D) {
+                Vec3 away = this.columbid.position().subtract(this.partner.position()).multiply(1.0D, 0.0D, 1.0D);
+                if (away.lengthSqr() > 1.0E-4D) {
+                    Vec3 target = this.columbid.position().add(away.normalize().scale(1.6D));
+                    this.columbid.getNavigation().moveTo(target.x, target.y, target.z, 0.55D);
+                }
+                return;
+            }
+            if (this.stepCooldown <= 0) {
+                this.stepCooldown = 18 + this.columbid.getRandom().nextInt(18);
+                Vec3 direction = this.columbid.position().subtract(this.partner.position()).multiply(1.0D, 0.0D, 1.0D);
+                if (direction.lengthSqr() <= 1.0E-4D) {
+                    direction = this.columbid.randomHorizontalDirection();
+                }
+                Vec3 orbit = rotateHorizontal(direction.normalize(), this.columbid.randomSigned(0.9D)).scale(2.0D + this.columbid.getRandom().nextDouble() * 0.8D);
+                Vec3 target = this.columbid.findDryLandingTarget(BlockPos.containing(this.partner.position().add(orbit)), 2);
+                if (target != null) {
+                    this.columbid.getNavigation().moveTo(target.x, target.y, target.z, 0.56D);
+                } else {
+                    this.columbid.getNavigation().stop();
+                }
+            }
+        }
+
+        @Override
+        public void stop() {
+            this.columbid.getNavigation().stop();
+            if (this.columbid.getBehaviorState() == ColumbidBehaviorState.COURTING) {
+                this.columbid.setBehaviorState(ColumbidBehaviorState.IDLE);
+            }
+            if (this.partner != null && this.partner.getBehaviorState() == ColumbidBehaviorState.COURTING) {
+                this.partner.setBehaviorState(ColumbidBehaviorState.IDLE);
+            }
+            this.partner = null;
         }
     }
 
@@ -1428,7 +1609,20 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                     || this.columbid.getRandom().nextInt(420) != 0) {
                 return false;
             }
-            List<LivingEntity> candidates = this.columbid.level().getEntitiesOfClass(LivingEntity.class, this.columbid.getBoundingBox().inflate(8.0D, 3.0D, 8.0D), entity -> entity instanceof SparrowEntity || (entity.getClass() == this.columbid.getClass() && entity != this.columbid));
+            List<LivingEntity> candidates = this.columbid.level().getEntitiesOfClass(LivingEntity.class, this.columbid.getBoundingBox().inflate(8.0D, 3.0D, 8.0D), entity -> {
+                if (entity instanceof SparrowEntity) {
+                    return true;
+                }
+                if (entity instanceof AbstractColumbidEntity other) {
+                    return other.getClass() == this.columbid.getClass()
+                            && other != this.columbid
+                            && other.isAlive()
+                            && !other.isTame()
+                            && other.pairPartnerUUID == null
+                            && !this.columbid.isPairedWith(other);
+                }
+                return false;
+            });
             if (candidates.isEmpty()) {
                 return false;
             }
@@ -1647,7 +1841,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             if (this.columbid.supportsPairBond() && this.columbid.pairPartner().isPresent() && this.columbid.courtshipCooldown <= 0 && roll < 8) {
                 this.columbid.courtshipCooldown = 900 + this.columbid.getRandom().nextInt(800);
                 this.columbid.setBehaviorStateFor(ColumbidBehaviorState.COURTING, Math.min(this.idleTicks, 90));
-                this.spawnCourtshipParticles();
+                this.columbid.spawnCourtshipParticles(3);
                 return;
             }
             if (roll < 20) {
@@ -1687,10 +1881,5 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             }
         }
 
-        private void spawnCourtshipParticles() {
-            if (this.columbid.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.HEART, this.columbid.getX(), this.columbid.getY() + 0.7D, this.columbid.getZ(), 3, 0.25D, 0.25D, 0.25D, 0.01D);
-            }
-        }
     }
 }

@@ -17,7 +17,6 @@ public enum ColumbidBehaviorState {
     FOLLOWING_OWNER(false),
     PAIR_FOLLOWING(false),
     COURTING(false),
-    NESTING(false),
     CHASING(false);
 
     private final boolean airborne;

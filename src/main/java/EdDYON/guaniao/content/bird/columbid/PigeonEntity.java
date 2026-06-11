@@ -83,6 +83,11 @@ public class PigeonEntity extends AbstractColumbidEntity {
     }
 
     @Override
+    protected boolean supportsPairBond() {
+        return true;
+    }
+
+    @Override
     protected AbstractColumbidEntity createChildEntity(ServerLevel level) {
         PigeonEntity child = GuaniaoEntityTypes.PIGEON.get().create(level);
         if (child != null) {
