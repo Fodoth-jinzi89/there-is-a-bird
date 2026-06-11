@@ -12,6 +12,7 @@ public enum NightHeronBehaviorState {
     WALK_ESCAPE(false),
     RUN_ESCAPE(false),
     FORAGING(false),
+    EATING(false),
     ROOSTING(false),
     SOCIAL_SPACING(false),
     TAKEOFF(true),
@@ -38,4 +39,3 @@ public enum NightHeronBehaviorState {
         return this == WALK_ESCAPE || this == RUN_ESCAPE || this == LOW_FLAP_ESCAPE || this == LONG_FLIGHT_ESCAPE;
     }
 }
-

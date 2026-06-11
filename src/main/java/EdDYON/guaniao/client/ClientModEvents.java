@@ -1,6 +1,9 @@
 package EdDYON.guaniao.client;
 
 import EdDYON.guaniao.client.cage.BirdCageRenderer;
+import EdDYON.guaniao.client.entity.budgerigar.BudgerigarRenderer;
+import EdDYON.guaniao.client.entity.columbid.PigeonRenderer;
+import EdDYON.guaniao.client.entity.columbid.SpottedDoveRenderer;
 import EdDYON.guaniao.client.entity.nightheron.NightHeronRenderer;
 import EdDYON.guaniao.client.entity.sparrow.SparrowRenderer;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
@@ -24,6 +27,9 @@ public final class ClientModEvents {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.NIGHT_HERON.get(), NightHeronRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPARROW.get(), SparrowRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BUDGERIGAR.get(), BudgerigarRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PIGEON.get(), PigeonRenderer::new);
         event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_CAGE.get(), BirdCageRenderer::new);
     }
 

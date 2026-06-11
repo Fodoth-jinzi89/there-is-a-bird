@@ -34,9 +34,9 @@ extends Goal {
     }
 
     public void start() {
-        this.remainingTicks = 80 + this.nightHeron.getRandom().nextInt(100);
+        this.remainingTicks = 100 + this.nightHeron.getRandom().nextInt(130);
         this.flightDirection = NightHeronLandingSelector.directionTo(this.roostTarget, this.nightHeron);
-        NightHeronFlightController.takeOff(this.nightHeron, this.flightDirection, 0.36, 0.72);
+        NightHeronFlightController.takeOff(this.nightHeron, this.flightDirection, 0.46, 0.82);
     }
 
     public void stop() {
@@ -62,7 +62,6 @@ extends Goal {
     }
 
     private int roostFlightChance() {
-        return NightHeronLandingSelector.hasRoostCoverNear(this.nightHeron.level(), this.nightHeron.blockPosition(), 5) ? 650 : 120;
+        return NightHeronLandingSelector.hasRoostCoverNear(this.nightHeron.level(), this.nightHeron.blockPosition(), 5) ? 320 : 70;
     }
 }
-

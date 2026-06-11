@@ -47,7 +47,7 @@ public final class SparrowProfile extends BirdSpeciesProfile {
 
     @Override
     public float baseFlightiness() {
-        return 0.62F;
+        return 0.52F;
     }
 
     @Override

@@ -20,6 +20,9 @@ public final class GuaniaoCreativeTabs {
         output.accept((ItemLike)GuaniaoItems.LARGE_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.NIGHT_HERON_SPAWN_EGG.get());
         output.accept((ItemLike)GuaniaoItems.SPARROW_SPAWN_EGG.get());
+        output.accept((ItemLike)GuaniaoItems.BUDGERIGAR_SPAWN_EGG.get());
+        output.accept((ItemLike)GuaniaoItems.SPOTTED_DOVE_SPAWN_EGG.get());
+        output.accept((ItemLike)GuaniaoItems.PIGEON_SPAWN_EGG.get());
     }).build());
 
     private GuaniaoCreativeTabs() {

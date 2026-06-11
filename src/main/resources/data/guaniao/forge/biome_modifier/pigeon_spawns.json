@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#guaniao:pigeon_habitat",
+  "spawners": {
+    "type": "guaniao:pigeon",
+    "weight": 14,
+    "minCount": 3,
+    "maxCount": 7
+  }
+}

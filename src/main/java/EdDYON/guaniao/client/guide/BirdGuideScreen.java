@@ -1,6 +1,8 @@
 package EdDYON.guaniao.client.guide;
 
 import java.util.List;
+import EdDYON.guaniao.content.bird.budgerigar.BudgerigarEntity;
+import EdDYON.guaniao.content.bird.columbid.AbstractColumbidEntity;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
@@ -27,7 +29,10 @@ public class BirdGuideScreen extends Screen {
     private static final int ACCENT_TEXT_COLOR = -992871;
     private static final List<BirdGuideEntry> ENTRIES = List.of(
             new BirdGuideEntry("night_heron", List.of("intro")),
-            new BirdGuideEntry("sparrow", List.of("intro"))
+            new BirdGuideEntry("sparrow", List.of("intro")),
+            new BirdGuideEntry("budgerigar", List.of("intro")),
+            new BirdGuideEntry("spotted_dove", List.of("intro")),
+            new BirdGuideEntry("pigeon", List.of("intro"))
     );
 
     private int selectedIndex;
@@ -367,6 +372,10 @@ public class BirdGuideScreen extends Screen {
             nightHeron.setGuidePreviewAnimation(this.toNightHeronPreviewAnimation(this.previewAnimation));
         } else if (entity instanceof SparrowEntity sparrow) {
             sparrow.setGuidePreviewAnimation(this.toSparrowPreviewAnimation(this.previewAnimation));
+        } else if (entity instanceof BudgerigarEntity budgerigar) {
+            budgerigar.setGuidePreviewAnimation(this.toBudgerigarPreviewAnimation(this.previewAnimation));
+        } else if (entity instanceof AbstractColumbidEntity columbid) {
+            columbid.setGuidePreviewAnimation(this.toColumbidPreviewAnimation(this.previewAnimation));
         }
     }
 
@@ -393,6 +402,29 @@ public class BirdGuideScreen extends Screen {
             case LOOK_3 -> SparrowEntity.GuidePreviewAnimation.LOOK_AROUND;
             case WALK, RUN -> SparrowEntity.GuidePreviewAnimation.WALK;
             case FLY_FLAP, GLIDE -> SparrowEntity.GuidePreviewAnimation.FLY;
+        };
+    }
+
+    private BudgerigarEntity.GuidePreviewAnimation toBudgerigarPreviewAnimation(GuidePreviewAnimation animation) {
+        return switch (animation) {
+            case IDLE -> BudgerigarEntity.GuidePreviewAnimation.IDLE;
+            case LOOK_1, SCRATCH -> BudgerigarEntity.GuidePreviewAnimation.PREEN;
+            case LOOK_2, LOOK_5 -> BudgerigarEntity.GuidePreviewAnimation.CURIOUS;
+            case LOOK_3 -> BudgerigarEntity.GuidePreviewAnimation.DANCE;
+            case WALK, RUN -> BudgerigarEntity.GuidePreviewAnimation.WALK;
+            case FLY_FLAP, GLIDE -> BudgerigarEntity.GuidePreviewAnimation.FLY;
+        };
+    }
+
+    private AbstractColumbidEntity.GuidePreviewAnimation toColumbidPreviewAnimation(GuidePreviewAnimation animation) {
+        return switch (animation) {
+            case IDLE -> AbstractColumbidEntity.GuidePreviewAnimation.IDLE;
+            case LOOK_1, SCRATCH -> AbstractColumbidEntity.GuidePreviewAnimation.LOOK_1;
+            case LOOK_2 -> AbstractColumbidEntity.GuidePreviewAnimation.LOOK_2;
+            case LOOK_3, LOOK_5 -> AbstractColumbidEntity.GuidePreviewAnimation.LOOK_3;
+            case WALK, RUN -> AbstractColumbidEntity.GuidePreviewAnimation.WALK;
+            case FLY_FLAP -> AbstractColumbidEntity.GuidePreviewAnimation.FLY_FLAP;
+            case GLIDE -> AbstractColumbidEntity.GuidePreviewAnimation.GLIDE;
         };
     }
 
@@ -613,7 +645,10 @@ public class BirdGuideScreen extends Screen {
 
         private EntityType<? extends LivingEntity> entityType() {
             return switch (this.id) {
+                case "budgerigar" -> GuaniaoEntityTypes.BUDGERIGAR.get();
                 case "sparrow" -> GuaniaoEntityTypes.SPARROW.get();
+                case "spotted_dove" -> GuaniaoEntityTypes.SPOTTED_DOVE.get();
+                case "pigeon" -> GuaniaoEntityTypes.PIGEON.get();
                 default -> GuaniaoEntityTypes.NIGHT_HERON.get();
             };
         }

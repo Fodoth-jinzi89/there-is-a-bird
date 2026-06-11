@@ -27,7 +27,7 @@ extends Goal {
         if (!this.nightHeron.onGround() || this.nightHeron.getTarget() != null || this.nightHeron.hasExternalFright()) {
             return false;
         }
-        int n = chance = this.nightHeron.isActiveTime() ? 260 : 720;
+        int n = chance = this.nightHeron.isActiveTime() ? 120 : 300;
         if (this.nightHeron.getRandom().nextInt(chance) != 0) {
             return false;
         }
@@ -43,9 +43,9 @@ extends Goal {
     }
 
     public void start() {
-        this.remainingTicks = this.flightKind == FlightKind.SOARING ? this.randomBetween(170, 320) : this.randomBetween(80, 170);
+        this.remainingTicks = this.flightKind == FlightKind.SOARING ? this.randomBetween(190, 360) : this.randomBetween(100, 220);
         this.flightDirection = NightHeronLandingSelector.directionTo(this.landingTarget, this.nightHeron);
-        NightHeronFlightController.takeOff(this.nightHeron, this.flightDirection, 0.48, 0.72);
+        NightHeronFlightController.takeOff(this.nightHeron, this.flightDirection, 0.56, 0.82);
     }
 
     public void stop() {
@@ -92,4 +92,3 @@ extends Goal {
 
     }
 }
-

@@ -30,11 +30,11 @@ public final class NightHeronFlightController {
     }
 
     public static void tickLowEscapeFlight(NightHeronEntity nightHeron, Vec3 direction, double speed, double targetHeight, double maxHeight) {
-        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, speed, targetHeight, maxHeight, -0.045, false, NightHeronBehaviorState.LOW_FLAP_ESCAPE);
+        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, Math.max(speed, 0.42), targetHeight, maxHeight, -0.045, false, NightHeronBehaviorState.LOW_FLAP_ESCAPE);
     }
 
     public static void tickLocalFlight(NightHeronEntity nightHeron, Vec3 direction) {
-        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.29, 7.0, 13.0, -0.045, false, NightHeronBehaviorState.LOCAL_FLIGHT);
+        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.36, 7.0, 13.0, -0.045, false, NightHeronBehaviorState.LOCAL_FLIGHT);
     }
 
     public static void tickLongEscapeFlight(NightHeronEntity nightHeron, Vec3 direction, double speed, double targetHeight, double maxHeight) {
@@ -42,11 +42,11 @@ public final class NightHeronFlightController {
     }
 
     public static void tickHighTransitFlight(NightHeronEntity nightHeron, Vec3 direction) {
-        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.36, 18.0, 28.0, -0.025, true, NightHeronBehaviorState.HIGH_TRANSIT);
+        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.42, 18.0, 28.0, -0.025, true, NightHeronBehaviorState.HIGH_TRANSIT);
     }
 
     public static void tickSoaringFlight(NightHeronEntity nightHeron, Vec3 direction) {
-        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.34, 23.0, 36.0, -0.025, true, NightHeronBehaviorState.SOARING);
+        NightHeronFlightController.tickDirectedFlight(nightHeron, direction, 0.40, 23.0, 36.0, -0.025, true, NightHeronBehaviorState.SOARING);
     }
 
     public static boolean tickLanding(NightHeronEntity nightHeron, BlockPos landingTarget) {

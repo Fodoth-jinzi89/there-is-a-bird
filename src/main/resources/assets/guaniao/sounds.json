@@ -36,5 +36,87 @@
     "sounds": [
       "guaniao:entity/night_heron/attack"
     ]
+  },
+  "entity.sparrow.ambient": {
+    "subtitle": "subtitles.guaniao.entity.sparrow.ambient",
+    "sounds": [
+      "guaniao:entity/sparrow/idle",
+      "guaniao:entity/sparrow/idle2",
+      "guaniao:entity/sparrow/idle3",
+      "guaniao:entity/sparrow/idle4",
+      "guaniao:entity/sparrow/idle5",
+      "guaniao:entity/sparrow/idle6",
+      "guaniao:entity/sparrow/idle7"
+    ]
+  },
+  "entity.sparrow.hurt": {
+    "subtitle": "subtitles.guaniao.entity.sparrow.hurt",
+    "sounds": [
+      "guaniao:entity/sparrow/idle",
+      "guaniao:entity/sparrow/idle2",
+      "guaniao:entity/sparrow/idle3",
+      "guaniao:entity/sparrow/idle4",
+      "guaniao:entity/sparrow/idle5",
+      "guaniao:entity/sparrow/idle6",
+      "guaniao:entity/sparrow/idle7"
+    ]
+  },
+  "entity.sparrow.death": {
+    "subtitle": "subtitles.guaniao.entity.sparrow.death",
+    "sounds": [
+      "guaniao:entity/sparrow/idle",
+      "guaniao:entity/sparrow/idle2",
+      "guaniao:entity/sparrow/idle3",
+      "guaniao:entity/sparrow/idle4",
+      "guaniao:entity/sparrow/idle5",
+      "guaniao:entity/sparrow/idle6",
+      "guaniao:entity/sparrow/idle7"
+    ]
+  },
+  "entity.budgerigar.ambient": {
+    "subtitle": "subtitles.guaniao.entity.budgerigar.ambient",
+    "sounds": [
+      "guaniao:entity/budgerigar/idle1",
+      "guaniao:entity/budgerigar/idle2",
+      "guaniao:entity/budgerigar/idle3",
+      "guaniao:entity/budgerigar/idle4",
+      "guaniao:entity/budgerigar/idle5",
+      "guaniao:entity/budgerigar/idle6",
+      "guaniao:entity/budgerigar/idle7",
+      "guaniao:entity/budgerigar/idle8",
+      "guaniao:entity/budgerigar/idle9",
+      "guaniao:entity/budgerigar/idle10",
+      "guaniao:entity/budgerigar/idle11",
+      "guaniao:entity/budgerigar/idle12"
+    ]
+  },
+  "entity.budgerigar.hurt": {
+    "subtitle": "subtitles.guaniao.entity.budgerigar.hurt",
+    "sounds": [
+      "guaniao:entity/budgerigar/hurt1",
+      "guaniao:entity/budgerigar/hurt2",
+      "guaniao:entity/budgerigar/hurt3",
+      "guaniao:entity/budgerigar/hurt4",
+      "guaniao:entity/budgerigar/hurt5"
+    ]
+  },
+  "entity.budgerigar.death": {
+    "subtitle": "subtitles.guaniao.entity.budgerigar.death",
+    "sounds": [
+      "guaniao:entity/budgerigar/death"
+    ]
+  },
+  "entity.budgerigar.interact": {
+    "subtitle": "subtitles.guaniao.entity.budgerigar.interact",
+    "sounds": [
+      "guaniao:entity/budgerigar/idle2",
+      "guaniao:entity/budgerigar/idle3",
+      "guaniao:entity/budgerigar/idle5",
+      "guaniao:entity/budgerigar/idle7",
+      "guaniao:entity/budgerigar/idle8",
+      "guaniao:entity/budgerigar/idle10",
+      "guaniao:entity/budgerigar/idle11",
+      "guaniao:entity/budgerigar/idle12"
+    ]
   }
 }
