@@ -19,7 +19,11 @@ public final class GuaniaoBlockEntityTypes {
 
     public static final RegistryObject<BlockEntityType<BirdBathBlockEntity>> BIRD_BATH = BLOCK_ENTITY_TYPES.register("bird_bath", () ->
             BlockEntityType.Builder.of(BirdBathBlockEntity::new,
+                    GuaniaoBlocks.WOODEN_BIRD_BATH.get(),
+                    GuaniaoBlocks.STONE_BIRD_BATH.get(),
                     GuaniaoBlocks.BIRD_BATH.get(),
+                    GuaniaoBlocks.WOODEN_BIRD_BATH_2.get(),
+                    GuaniaoBlocks.STONE_BIRD_BATH_2.get(),
                     GuaniaoBlocks.BIRD_BATH_2.get()).build(null));
 
     private GuaniaoBlockEntityTypes() {

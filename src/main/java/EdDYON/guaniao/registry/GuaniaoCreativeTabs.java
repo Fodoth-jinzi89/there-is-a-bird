@@ -18,7 +18,11 @@ public final class GuaniaoCreativeTabs {
         output.accept((ItemLike)GuaniaoItems.SMALL_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.MEDIUM_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.LARGE_BIRD_CAGE.get());
+        output.accept((ItemLike)GuaniaoItems.WOODEN_BIRD_BATH.get());
+        output.accept((ItemLike)GuaniaoItems.STONE_BIRD_BATH.get());
         output.accept((ItemLike)GuaniaoItems.BIRD_BATH.get());
+        output.accept((ItemLike)GuaniaoItems.WOODEN_BIRD_BATH_2.get());
+        output.accept((ItemLike)GuaniaoItems.STONE_BIRD_BATH_2.get());
         output.accept((ItemLike)GuaniaoItems.BIRD_BATH_2.get());
         output.accept((ItemLike)GuaniaoItems.NIGHT_HERON_SPAWN_EGG.get());
         output.accept((ItemLike)GuaniaoItems.SPARROW_SPAWN_EGG.get());

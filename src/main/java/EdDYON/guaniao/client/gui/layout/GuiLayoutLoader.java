@@ -3,27 +3,36 @@ package EdDYON.guaniao.client.gui.layout;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.minecraftforge.fml.loading.FMLPaths;
 
 public final class GuiLayoutLoader {
-    private static final Path BIRD_GUIDE_LAYOUT_PATH = FMLPaths.CONFIGDIR.get().resolve("guaniao/gui/bird_guide_layout.json");
+    private static final String BIRD_GUIDE_LAYOUT_RESOURCE = "/assets/guaniao/gui/bird_guide_layout.json";
 
     private GuiLayoutLoader() {
     }
 
     public static GuiLayoutConfig loadBirdGuideLayout() {
-        if (!Files.isRegularFile(BIRD_GUIDE_LAYOUT_PATH)) {
+        try (InputStream stream = GuiLayoutLoader.class.getResourceAsStream(BIRD_GUIDE_LAYOUT_RESOURCE)) {
+            if (stream == null) {
+                return null;
+            }
+            return parseLayout(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        } catch (Exception ignored) {
             return null;
         }
+    }
 
-        try (BufferedReader reader = Files.newBufferedReader(BIRD_GUIDE_LAYOUT_PATH, StandardCharsets.UTF_8)) {
+    public static boolean saveBirdGuideLayout(int baseWidth, int baseHeight, Map<String, GuiLayoutRect> rects) {
+        return false;
+    }
+
+    private static GuiLayoutConfig parseLayout(Reader reader) {
+        try {
             JsonElement rootElement = JsonParser.parseReader(reader);
             if (!rootElement.isJsonObject()) {
                 return null;
@@ -63,42 +72,6 @@ public final class GuiLayoutLoader {
             return new GuiLayoutConfig(screen, baseWidth, baseHeight, rects);
         } catch (Exception ignored) {
             return null;
-        }
-    }
-
-    public static boolean saveBirdGuideLayout(int baseWidth, int baseHeight, Map<String, GuiLayoutRect> rects) {
-        if (baseWidth <= 0 || baseHeight <= 0 || rects.isEmpty()) {
-            return false;
-        }
-
-        JsonObject root = new JsonObject();
-        root.addProperty("screen", "bird_guide");
-        root.addProperty("baseWidth", baseWidth);
-        root.addProperty("baseHeight", baseHeight);
-
-        JsonObject rectRoot = new JsonObject();
-        for (Map.Entry<String, GuiLayoutRect> entry : rects.entrySet()) {
-            GuiLayoutRect rect = entry.getValue();
-            if (rect == null || !rect.isValid()) {
-                continue;
-            }
-            JsonObject rectJson = new JsonObject();
-            rectJson.addProperty("x", rect.x());
-            rectJson.addProperty("y", rect.y());
-            rectJson.addProperty("w", rect.w());
-            rectJson.addProperty("h", rect.h());
-            rectRoot.add(entry.getKey(), rectJson);
-        }
-        root.add("rects", rectRoot);
-
-        try {
-            Files.createDirectories(BIRD_GUIDE_LAYOUT_PATH.getParent());
-            try (BufferedWriter writer = Files.newBufferedWriter(BIRD_GUIDE_LAYOUT_PATH, StandardCharsets.UTF_8)) {
-                writer.write(root.toString());
-            }
-            return true;
-        } catch (Exception ignored) {
-            return false;
         }
     }
 

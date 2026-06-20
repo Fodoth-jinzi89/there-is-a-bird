@@ -141,6 +141,9 @@ public class BirdBathBlock extends BaseEntityBlock {
 
     private InteractionResult addStackContent(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BirdBathBlockEntity birdBath, BirdBathContentType contentType, ItemStack remainder) {
         if (!birdBath.canAccept(contentType)) {
+            if (canReplaceContent(birdBath, contentType)) {
+                return this.replaceStackContent(level, pos, player, hand, stack, birdBath, contentType, remainder);
+            }
             return InteractionResult.PASS;
         }
         if (birdBath.getContentLevel() >= 3) {
@@ -164,6 +167,29 @@ public class BirdBathBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
+    private InteractionResult replaceStackContent(Level level, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BirdBathBlockEntity birdBath, BirdBathContentType contentType, ItemStack remainder) {
+        if (!level.isClientSide) {
+            if (birdBath.setContent(contentType, 1)) {
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                    if (!remainder.isEmpty()) {
+                        giveOrReplaceHeldItem(player, hand, remainder.copy());
+                    }
+                }
+                BirdBathEffects.foodAdded(level, pos, contentType);
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    private static boolean canReplaceContent(BirdBathBlockEntity birdBath, BirdBathContentType contentType) {
+        if (birdBath == null || contentType == null || !contentType.isFood() || birdBath.isSpoiled() || birdBath.isEmpty()) {
+            return false;
+        }
+        BirdBathContentType currentType = birdBath.getContentType();
+        return currentType != contentType && (currentType.isWaterLike() || currentType.isFood());
+    }
+
     private static BirdBathContentType contentTypeForStack(ItemStack stack) {
         if (stack.isEmpty()) {
             return BirdBathContentType.EMPTY;
@@ -182,7 +208,9 @@ public class BirdBathBlock extends BaseEntityBlock {
 
     private static boolean isFish(ItemStack stack) {
         return stack.is(Items.COD)
+                || stack.is(Items.COOKED_COD)
                 || stack.is(Items.SALMON)
+                || stack.is(Items.COOKED_SALMON)
                 || stack.is(Items.TROPICAL_FISH)
                 || stack.is(Items.PUFFERFISH);
     }

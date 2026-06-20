@@ -9,12 +9,10 @@ config = "guaniao.mixins.json"
 [[mods]]
 modId = "guaniao"
 version = "${file.jarVersion}"
-displayName = "\u89c2\u9e1f"
+displayName = "Bird Watching"
 logoFile = "guaniao_logo.png"
 authors = "EdDYON"
-description = '''
-我去！哪来的鸟
-'''
+description = "\u6211\u53bb\uff01\u54ea\u6765\u7684\u9e1f\uff1f"
 
 [[dependencies.guaniao]]
 modId = "forge"

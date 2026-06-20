@@ -93,6 +93,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.20.1:${geckolib_version}")
     implementation "com.eliotlash.mclib:mclib:20"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 jar {

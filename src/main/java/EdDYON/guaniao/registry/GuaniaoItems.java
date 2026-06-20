@@ -34,7 +34,11 @@ public final class GuaniaoItems {
     public static final RegistryObject<Item> SMALL_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.SMALL, GuaniaoBlocks.SMALL_BIRD_CAGE);
     public static final RegistryObject<Item> MEDIUM_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.MEDIUM, GuaniaoBlocks.MEDIUM_BIRD_CAGE);
     public static final RegistryObject<Item> LARGE_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.LARGE, GuaniaoBlocks.LARGE_BIRD_CAGE);
+    public static final RegistryObject<Item> WOODEN_BIRD_BATH = GuaniaoItems.registerBirdBathItem(BirdBathVariant.WOODEN_BIRD_BATH, GuaniaoBlocks.WOODEN_BIRD_BATH);
+    public static final RegistryObject<Item> STONE_BIRD_BATH = GuaniaoItems.registerBirdBathItem(BirdBathVariant.STONE_BIRD_BATH, GuaniaoBlocks.STONE_BIRD_BATH);
     public static final RegistryObject<Item> BIRD_BATH = GuaniaoItems.registerBirdBathItem(BirdBathVariant.BIRD_BATH, GuaniaoBlocks.BIRD_BATH);
+    public static final RegistryObject<Item> WOODEN_BIRD_BATH_2 = GuaniaoItems.registerBirdBathItem(BirdBathVariant.WOODEN_BIRD_BATH_2, GuaniaoBlocks.WOODEN_BIRD_BATH_2);
+    public static final RegistryObject<Item> STONE_BIRD_BATH_2 = GuaniaoItems.registerBirdBathItem(BirdBathVariant.STONE_BIRD_BATH_2, GuaniaoBlocks.STONE_BIRD_BATH_2);
     public static final RegistryObject<Item> BIRD_BATH_2 = GuaniaoItems.registerBirdBathItem(BirdBathVariant.BIRD_BATH_2, GuaniaoBlocks.BIRD_BATH_2);
 
     private GuaniaoItems() {

@@ -32,8 +32,11 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
     private static final int MAX_CONTENT_LEVEL = 3;
     private static final int RAIN_REFILL_AMOUNT = 3;
     private static final int ENVIRONMENT_TICK_INTERVAL = 200;
-    private static final int FISH_MEAT_SPOIL_TICKS = 30000;
-    private static final int BREAD_SPOIL_TICKS = 60000;
+    private static final int EVAPORATION_CHANCE = 72;
+    private static final int WATER_DIRT_CHANCE = 36;
+    private static final int FISH_MEAT_SPOIL_TICKS = 72000;
+    private static final int BREAD_SPOIL_TICKS = 144000;
+    private static final int SUNLIGHT_SPOIL_BONUS_DIVISOR = 8;
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private BirdBathContentType contentType = BirdBathContentType.EMPTY;
@@ -273,7 +276,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         boolean rainingHere = openToSky && level.isRainingAt(pos.above());
         if (rainingHere) {
             changed |= this.tickRainRefill(level, pos, random);
-        } else if (this.contentType == BirdBathContentType.WATER && openToSky && level.isDay() && random.nextInt(18) == 0) {
+        } else if (this.contentType == BirdBathContentType.WATER && openToSky && level.isDay() && random.nextInt(EVAPORATION_CHANCE) == 0) {
             changed |= this.reduceWaterByEvaporation(level, pos);
         }
         if (openToSky) {
@@ -451,7 +454,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
         }
         int increment = Math.max(1, elapsedTicks);
         if (level.isDay() && level.canSeeSky(pos.above()) && !level.isRaining()) {
-            increment += Math.max(1, elapsedTicks / 3);
+            increment += Math.max(1, elapsedTicks / SUNLIGHT_SPOIL_BONUS_DIVISOR);
         }
         this.spoilTicks += increment;
         int threshold = this.contentType == BirdBathContentType.BREAD ? BREAD_SPOIL_TICKS : FISH_MEAT_SPOIL_TICKS;
@@ -466,7 +469,7 @@ public class BirdBathBlockEntity extends BlockEntity implements GeoBlockEntity {
     }
 
     private boolean tickLongTermDirt(RandomSource random) {
-        if (this.contentType != BirdBathContentType.WATER || this.cleanliness == BirdBathCleanliness.FILTHY || random.nextInt(10) != 0) {
+        if (this.contentType != BirdBathContentType.WATER || this.cleanliness == BirdBathCleanliness.FILTHY || random.nextInt(WATER_DIRT_CHANCE) != 0) {
             return false;
         }
         this.cleanliness = this.cleanliness.nextDirtier();

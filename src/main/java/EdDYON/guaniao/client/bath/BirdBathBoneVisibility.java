@@ -36,7 +36,7 @@ final class BirdBathBoneVisibility {
         if (!DIRT_BONES.contains(boneName)) {
             return;
         }
-        boolean visible = isDirtBoneVisible(type, cleanliness, boneName);
+        boolean visible = isDirtBoneVisible(type, level, cleanliness, boneName);
         bone.setHidden(!visible);
         bone.setChildrenHidden(!visible);
     }
@@ -114,7 +114,10 @@ final class BirdBathBoneVisibility {
         };
     }
 
-    private static boolean isDirtBoneVisible(BirdBathContentType type, BirdBathCleanliness cleanliness, String boneName) {
+    private static boolean isDirtBoneVisible(BirdBathContentType type, int level, BirdBathCleanliness cleanliness, String boneName) {
+        if (level < 3) {
+            return false;
+        }
         BirdBathCleanliness normalizedCleanliness = cleanliness == null ? BirdBathCleanliness.CLEAN : cleanliness;
         if (type == BirdBathContentType.SPOILED && (boneName.equals("spoil_spots") || boneName.equals("flies"))) {
             return true;

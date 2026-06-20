@@ -45,6 +45,7 @@ public class BirdGuideScreen extends Screen {
     private static final int EDIT_ACTIVE = 0xFFFFFFFF;
     private static final int EDIT_HANDLE = 0xFFB7F0FF;
     private static final int EDIT_MIN_SIZE = 24;
+    private static final boolean LAYOUT_EDITING_ENABLED = false;
     private static final List<BirdGuideEntry> ENTRIES = List.of(
             new BirdGuideEntry("night_heron", List.of("intro")),
             new BirdGuideEntry("sparrow", List.of("intro")),
@@ -133,10 +134,10 @@ public class BirdGuideScreen extends Screen {
         BirdGuideEntry entry = this.selectedEntry(this.selectedIndex);
         this.renderCenterDetails(graphics, entry);
         this.renderPreviewPanel(graphics, mouseX, mouseY);
-        if (this.debugLayout || this.layoutEditMode) {
+        if (LAYOUT_EDITING_ENABLED && (this.debugLayout || this.layoutEditMode)) {
             this.renderLayoutDebug(graphics);
         }
-        if (this.layoutEditMode) {
+        if (LAYOUT_EDITING_ENABLED && this.layoutEditMode) {
             this.renderLayoutEditHelp(graphics);
         }
         super.render(graphics, mouseX, mouseY, partialTicks);
@@ -155,7 +156,7 @@ public class BirdGuideScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.layoutEditMode && button == 0 && this.startLayoutEditDrag(mouseX, mouseY)) {
+        if (LAYOUT_EDITING_ENABLED && this.layoutEditMode && button == 0 && this.startLayoutEditDrag(mouseX, mouseY)) {
             return true;
         }
         if (super.mouseClicked(mouseX, mouseY, button)) {
@@ -197,7 +198,7 @@ public class BirdGuideScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == 0 && this.layoutEditMode && this.editDragMode != EditDragMode.NONE) {
+        if (button == 0 && LAYOUT_EDITING_ENABLED && this.layoutEditMode && this.editDragMode != EditDragMode.NONE) {
             this.updateLayoutEditDrag(mouseX, mouseY);
             return true;
         }
@@ -212,7 +213,7 @@ public class BirdGuideScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && this.layoutEditMode && this.editDragMode != EditDragMode.NONE) {
+        if (button == 0 && LAYOUT_EDITING_ENABLED && this.layoutEditMode && this.editDragMode != EditDragMode.NONE) {
             this.editDragMode = EditDragMode.NONE;
             this.editDragStartRect = null;
             return true;
@@ -239,6 +240,9 @@ public class BirdGuideScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (!LAYOUT_EDITING_ENABLED) {
+            return super.keyPressed(keyCode, scanCode, modifiers);
+        }
         if (keyCode == GLFW.GLFW_KEY_E && Screen.hasControlDown()) {
             this.toggleLayoutEditMode();
             return true;
