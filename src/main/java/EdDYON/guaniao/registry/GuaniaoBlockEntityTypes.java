@@ -1,6 +1,7 @@
 package EdDYON.guaniao.registry;
 
 import EdDYON.guaniao.GuaniaoMod;
+import EdDYON.guaniao.content.bath.BirdBathBlockEntity;
 import EdDYON.guaniao.content.cage.BirdCageBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -15,6 +16,11 @@ public final class GuaniaoBlockEntityTypes {
                     GuaniaoBlocks.SMALL_BIRD_CAGE.get(),
                     GuaniaoBlocks.MEDIUM_BIRD_CAGE.get(),
                     GuaniaoBlocks.LARGE_BIRD_CAGE.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<BirdBathBlockEntity>> BIRD_BATH = BLOCK_ENTITY_TYPES.register("bird_bath", () ->
+            BlockEntityType.Builder.of(BirdBathBlockEntity::new,
+                    GuaniaoBlocks.BIRD_BATH.get(),
+                    GuaniaoBlocks.BIRD_BATH_2.get()).build(null));
 
     private GuaniaoBlockEntityTypes() {
     }

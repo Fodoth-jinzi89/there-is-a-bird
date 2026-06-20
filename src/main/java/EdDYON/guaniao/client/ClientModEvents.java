@@ -1,5 +1,6 @@
 package EdDYON.guaniao.client;
 
+import EdDYON.guaniao.client.bath.BirdBathRenderer;
 import EdDYON.guaniao.client.cage.BirdCageRenderer;
 import EdDYON.guaniao.client.entity.budgerigar.BudgerigarRenderer;
 import EdDYON.guaniao.client.entity.columbid.PigeonRenderer;
@@ -31,6 +32,7 @@ public final class ClientModEvents {
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PIGEON.get(), PigeonRenderer::new);
         event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_CAGE.get(), BirdCageRenderer::new);
+        event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_BATH.get(), BirdBathRenderer::new);
     }
 
     @SubscribeEvent

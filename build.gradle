@@ -73,6 +73,11 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+mixin {
+    add sourceSets.main, 'guaniao.refmap.json'
+    config 'guaniao.mixins.json'
+}
+
 repositories {
     mavenCentral()
     maven {

@@ -9,7 +9,7 @@ public final class PigeonDefinition {
     public static final float HEIGHT = 0.54F;
     public static final double MAX_HEALTH = 8.0D;
     public static final double WALK_SPEED = 0.22D;
-    public static final double FLYING_SPEED = 0.38D;
+    public static final double FLYING_SPEED = 0.42D;
     public static final double FOLLOW_RANGE = 18.0D;
 
     private PigeonDefinition() {

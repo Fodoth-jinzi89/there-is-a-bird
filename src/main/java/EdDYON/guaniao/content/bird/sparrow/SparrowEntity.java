@@ -5,9 +5,17 @@ import java.util.List;
 import java.util.UUID;
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
 import EdDYON.guaniao.content.bird.brain.BirdIntent;
+import EdDYON.guaniao.content.bird.flight.BirdFlightAware;
+import EdDYON.guaniao.content.bird.flight.BirdFlightBoids;
+import EdDYON.guaniao.content.bird.flight.BirdFlightController;
+import EdDYON.guaniao.content.bird.flight.BirdFlightProfile;
+import EdDYON.guaniao.content.bird.flight.BirdFlightTargeting;
 import EdDYON.guaniao.content.bird.scale.BirdModelScale;
 import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
+import EdDYON.guaniao.content.bath.BirdBathAttraction;
+import EdDYON.guaniao.content.bath.BirdBathContentType;
+import EdDYON.guaniao.content.bath.BirdBathUseGoal;
 import EdDYON.guaniao.content.bird.species.SparrowProfile;
 import EdDYON.guaniao.content.feed.BreadcrumbPileBlock;
 import net.minecraft.core.Direction;
@@ -80,7 +88,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel {
+public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(SparrowEntity.class, (EntityDataSerializer)EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(SparrowEntity.class, EntityDataSerializers.FLOAT);
     static final Ingredient TAMING_ITEMS = Ingredient.of((ItemLike[])new ItemLike[]{
@@ -100,6 +108,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     private static final double WALKING_SPEED_THRESHOLD = 0.0018;
     private static final double SHORT_FLIGHT_SPEED = 0.24;
     private static final double ESCAPE_FLIGHT_SPEED = 0.42;
+    private static final BirdFlightProfile FLIGHT_PROFILE = BirdFlightProfile.SPARROW;
     private static final float FLIGHT_YAW_TURN_RATE = 22.0f;
     private static final float FLIGHT_PITCH_TURN_RATE = 10.0f;
     private static final int MAX_FAMILIAR_TICKS = 7200;
@@ -119,6 +128,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     private int satiatedTicks;
     private int flightTicks;
     private int flightDuration;
+    private int timeFlying;
     private int flightCooldown;
     private int blockedFlightTicks;
     private int flightLandingTicks;
@@ -141,6 +151,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
 
     public SparrowEntity(EntityType<? extends SparrowEntity> entityType, Level level) {
         super(entityType, level);
+        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0f);
         this.setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0f);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 16.0f);
@@ -178,11 +189,21 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.goalSelector.addGoal(3, (Goal)new TemptGoal(this, 0.9, TAMING_ITEMS, false));
         this.goalSelector.addGoal(4, (Goal)new BreedGoal(this, 0.8));
         this.goalSelector.addGoal(5, (Goal)new SparrowEatBreadcrumbGoal(this));
-        this.goalSelector.addGoal(6, (Goal)new SparrowPerchGoal(this));
-        this.goalSelector.addGoal(7, (Goal)new SparrowFlockGoal(this));
-        this.goalSelector.addGoal(8, (Goal)new RandomStrollGoal(this, 0.72));
-        this.goalSelector.addGoal(9, (Goal)new LookAtPlayerGoal((Mob)this, Player.class, 6.0f));
-        this.goalSelector.addGoal(10, (Goal)new RandomLookAroundGoal((Mob)this));
+        this.goalSelector.addGoal(6, (Goal)new BirdBathUseGoal(this, 0.82D, 9.0D, 42,
+                BirdBathAttraction::isAttractiveToSmallSeedBird,
+                this::canUseBirdBath,
+                bath -> this.setBehaviorState(SparrowBehaviorState.FORAGING),
+                this::consumeBirdBathServing,
+                (bath, consumed) -> {
+                    if (this.getBehaviorState() == SparrowBehaviorState.FORAGING) {
+                        this.setBehaviorStateFor(SparrowBehaviorState.LOOK_AROUND, consumed ? 24 : 8);
+                    }
+                }));
+        this.goalSelector.addGoal(7, (Goal)new SparrowPerchGoal(this));
+        this.goalSelector.addGoal(8, (Goal)new SparrowFlockGoal(this));
+        this.goalSelector.addGoal(9, (Goal)new RandomStrollGoal(this, 0.72));
+        this.goalSelector.addGoal(10, (Goal)new LookAtPlayerGoal((Mob)this, Player.class, 6.0f));
+        this.goalSelector.addGoal(11, (Goal)new RandomLookAroundGoal((Mob)this));
     }
 
     @Override
@@ -271,7 +292,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             if (this.getNavigation().isDone() && this.getRandom().nextInt(160) == 0) {
                 this.triggerPeck();
             }
-            int ambientFlightChance = this.level().isDay() ? (this.isTame() ? 520 : 260) : (this.isTame() ? 900 : 520);
+            int ambientFlightChance = this.level().isDay() ? (this.isTame() ? 360 : 260) : (this.isTame() ? 720 : 520);
             if (this.canStartAmbientShortFlight() && this.getRandom().nextInt(ambientFlightChance) == 0) {
                 this.startAmbientShortFlight();
             }
@@ -285,6 +306,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         }
         if (!this.level().isClientSide) {
             this.tickBehaviorStateFallback();
+            this.tickGroundMovementFacing();
         }
     }
 
@@ -406,6 +428,28 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         return this.birdBrain;
     }
 
+    @Override
+    public BirdFlightProfile birdFlightProfile() {
+        return FLIGHT_PROFILE;
+    }
+
+    @Override
+    public boolean isBirdFlightActive() {
+        return this.isControlledFlightActive()
+                || this.getBehaviorState().isAirborne()
+                || this.airborneFlightAnimationTicks > 0 && !this.onGround();
+    }
+
+    @Override
+    public boolean isBirdLanding() {
+        return this.flightLandingTicks > 0;
+    }
+
+    @Override
+    public boolean isBirdEscaping() {
+        return this.escapeFlight;
+    }
+
     public boolean startFlybyFlight(Vec3 landingTarget) {
         if (landingTarget == null) {
             return false;
@@ -462,6 +506,33 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                 || intent == BirdIntent.LONG_FLIGHT;
     }
 
+    private boolean canUseBirdBath() {
+        SparrowBehaviorState state = this.getBehaviorState();
+        return this.onGround()
+                && !this.isControlledFlightActive()
+                && this.flightCooldown <= 0
+                && this.pendingScareTicks <= 0
+                && !this.hasBreadcrumbInterest()
+                && !this.brainWantsRoost()
+                && this.getTarget() == null
+                && state != SparrowBehaviorState.PERCHING
+                && state != SparrowBehaviorState.ROOSTING
+                && !state.isEscape();
+    }
+
+    private void consumeBirdBathServing(EdDYON.guaniao.content.bath.BirdBathBlockEntity bath, BirdBathContentType contentType) {
+        if (contentType == BirdBathContentType.BREAD) {
+            this.satiatedTicks = Math.max(this.satiatedTicks, 700);
+            this.birdBrain.onEat(0.24F);
+            this.triggerPeck();
+            return;
+        }
+        this.satiatedTicks = Math.max(this.satiatedTicks, 420);
+        this.birdBrain.onEat(0.12F);
+        this.setBehaviorStateFor(SparrowBehaviorState.LOOK_AROUND, 26);
+        this.playSound(SoundEvents.GENERIC_DRINK, 0.18F, 1.35F + this.getRandom().nextFloat() * 0.18F);
+    }
+
     private boolean canStartAmbientShortFlight() {
         if (this.isControlledFlightActive()
                 || !this.onGround()
@@ -487,7 +558,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             return true;
         }
         LivingEntity owner = this.getOwner();
-        return owner != null && this.distanceToSqr(owner) > 144.0;
+        return owner == null || this.distanceToSqr(owner) > 49.0;
     }
 
     private boolean canRandomShortHop() {
@@ -554,6 +625,31 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             return true;
         }
         return false;
+    }
+
+    private void tickGroundMovementFacing() {
+        if (!this.shouldFaceGroundMovement()) {
+            return;
+        }
+        BirdFlightController.faceGroundMovement(this, this.getDeltaMovement(), 1.0E-4D);
+    }
+
+    private boolean shouldFaceGroundMovement() {
+        if (!this.onGround()
+                || this.isControlledFlightActive()
+                || this.isInWaterOrBubble()
+                || this.isPassenger()) {
+            return false;
+        }
+        SparrowBehaviorState state = this.getBehaviorState();
+        if (state == SparrowBehaviorState.PECKING
+                || state == SparrowBehaviorState.LOOK_AROUND
+                || state == SparrowBehaviorState.PERCHING
+                || state == SparrowBehaviorState.ROOSTING
+                || state.isEscape()) {
+            return false;
+        }
+        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
     }
 
     private boolean isOwnedBy(Player player) {
@@ -903,13 +999,14 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     private boolean isControlledFlightActive() {
-        return this.flightTarget != null && this.flightTicks > 0;
+        return this.flightTarget != null && (this.flightTicks > 0 || !this.onGround());
     }
 
     private void clearSerializedFlightState() {
         this.flightTarget = null;
         this.flightTicks = 0;
         this.flightDuration = 0;
+        this.timeFlying = 0;
         this.blockedFlightTicks = 0;
         this.flightLandingTicks = 0;
         this.airborneFlightAnimationTicks = 0;
@@ -966,13 +1063,14 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.flightTarget = target;
         this.flightTicks = duration;
         this.flightDuration = duration;
+        this.timeFlying = 0;
         this.flightSpeed = speed;
         this.escapeFlight = escapeFlight;
         this.blockedFlightTicks = 0;
         this.flightLandingTicks = 0;
         this.airborneFlightAnimationTicks = duration + 12;
         this.setBehaviorStateFor(escapeFlight ? SparrowBehaviorState.FLEEING : SparrowBehaviorState.SHORT_FLIGHT, escapeFlight ? 70 : 32);
-        this.flightCooldown = escapeFlight ? 45 + this.getRandom().nextInt(65) : (this.isTame() ? 120 + this.getRandom().nextInt(120) : 70 + this.getRandom().nextInt(90));
+        this.flightCooldown = escapeFlight ? 45 + this.getRandom().nextInt(65) : (this.isTame() ? 90 + this.getRandom().nextInt(110) : 70 + this.getRandom().nextInt(90));
         this.getNavigation().stop();
         this.setNoGravity(true);
         this.setOnGround(false);
@@ -995,6 +1093,17 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.getNavigation().stop();
         this.setNoGravity(true);
         --this.flightTicks;
+        ++this.timeFlying;
+        if (this.flightTicks <= 0 && !this.onGround()) {
+            ++this.flightLandingTicks;
+            this.flightTicks = 1;
+            if (this.flightLandingTicks == 1 || this.flightLandingTicks % 14 == 0) {
+                Vec3 landing = this.findNearestShortFlightLandingTarget(this.flightLandingTicks > 70 ? 18 : 11);
+                if (landing != null) {
+                    this.flightTarget = landing;
+                }
+            }
+        }
         Vec3 toTarget = this.flightTarget.subtract(this.position());
         double distance = toTarget.length();
         double horizontalDistance = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
@@ -1012,8 +1121,26 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (horizontalDirection.lengthSqr() <= 1.0E-4) {
             horizontalDirection = this.getLookAngle().multiply(1.0, 0.0, 1.0);
         }
+        double heightAboveTarget = this.getY() - this.flightTarget.y;
+        if (this.flightLandingTicks > 0 && horizontalDistance < 1.5 && heightAboveTarget > 2.4) {
+            Vec3 drift = this.getDeltaMovement().multiply(1.0, 0.0, 1.0);
+            if (drift.lengthSqr() > 1.0E-4) {
+                horizontalDirection = drift;
+            }
+        }
         horizontalDirection = horizontalDirection.normalize();
-        double speed = horizontalDistance < 2.0 ? this.flightSpeed * 0.58 : this.flightSpeed;
+        Vec3 flockHeading = BirdFlightBoids.sameTypeHeading(
+                this,
+                this.escapeFlight ? 14.0D : 10.0D,
+                1.9D,
+                this.escapeFlight ? 0.0D : 0.035D,
+                this.escapeFlight ? 0.10D : 0.34D,
+                this.escapeFlight ? 0.22D : 0.10D,
+                this.escapeFlight ? 0.20D : 0.06D);
+        if (flockHeading.lengthSqr() > 1.0E-4D) {
+            horizontalDirection = BirdFlightTargeting.normalizeHorizontal(horizontalDirection.add(flockHeading), horizontalDirection);
+        }
+        double speed = BirdFlightController.decelerateNearLanding(this.flightSpeed, horizontalDistance, this.escapeFlight ? 3.0D : 2.4D, 0.50D);
         double lift = Mth.clamp(toTarget.y * 0.16, -0.11, 0.16);
         if (flightAge < 8) {
             lift += this.escapeFlight ? 0.24 : 0.11;
@@ -1021,8 +1148,24 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (horizontalDistance < 1.6) {
             lift = Mth.clamp(toTarget.y * 0.22 - 0.05, -0.14, 0.06);
         }
+        if (this.flightLandingTicks > 0) {
+            speed = Math.max(speed, this.flightSpeed * 0.46);
+            lift = Math.min(lift, this.flightLandingTicks > 70 ? -0.05 : -0.032);
+            if (heightAboveTarget < 1.15) {
+                lift = Math.max(lift, -0.026);
+            }
+        }
         Vec3 desired = horizontalDirection.scale(speed).add(0.0, lift, 0.0);
         Vec3 movement = this.getDeltaMovement().scale(0.32).add(desired.scale(0.68));
+        if (BirdFlightController.isStalledInAir(this, this.timeFlying, 0.006D)) {
+            Vec3 newTarget = this.findShortFlightTarget(null, this.escapeFlight, this.escapeFlight ? 8 : 4, this.escapeFlight ? 16 : 10);
+            if (newTarget != null) {
+                this.flightTarget = newTarget;
+                this.flightTicks = Math.max(this.flightTicks, 18);
+                this.flightLandingTicks = 0;
+            }
+            movement = horizontalDirection.scale(Math.max(speed, this.flightSpeed * 0.65D)).add(0.0D, this.escapeFlight ? 0.12D : 0.08D, 0.0D);
+        }
         if (this.horizontalCollision || (this.verticalCollision && flightAge > 6)) {
             ++this.blockedFlightTicks;
             movement = movement.add(0.0, 0.08, 0.0);
@@ -1039,13 +1182,11 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.blockedFlightTicks = 0;
         }
         if (this.flightTicks <= 0) {
-            if (!this.onGround() && this.flightLandingTicks < 30) {
-                ++this.flightLandingTicks;
-                this.flightTicks = 1;
-            } else {
-                this.finishControlledFlight(this.onGround());
+            if (this.onGround()) {
+                this.finishControlledFlight(true);
                 return;
             }
+            this.flightTicks = 1;
         }
         this.setDeltaMovement(movement);
         this.faceMovement(movement);
@@ -1077,6 +1218,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         this.flightTarget = null;
         this.flightTicks = 0;
         this.flightDuration = 0;
+        this.timeFlying = 0;
         this.blockedFlightTicks = 0;
         this.flightLandingTicks = 0;
         this.escapeFlight = false;
@@ -1089,7 +1231,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.setDeltaMovement(movement.x * 0.55, Math.max(movement.y * 0.35, -0.04), movement.z * 0.55);
             this.airborneFlightAnimationTicks = Math.max(this.airborneFlightAnimationTicks, 18);
         }
-        int cooldown = wasEscapeFlight ? 55 + this.getRandom().nextInt(75) : (this.isTame() ? 130 + this.getRandom().nextInt(130) : 85 + this.getRandom().nextInt(95));
+        int cooldown = wasEscapeFlight ? 55 + this.getRandom().nextInt(75) : (this.isTame() ? 100 + this.getRandom().nextInt(120) : 85 + this.getRandom().nextInt(95));
         this.flightCooldown = Math.max(this.flightCooldown, cooldown);
         if (wasEscapeFlight) {
             this.suppressOwnerFollow(140);
@@ -1114,7 +1256,10 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                 Vec3 away = this.position().subtract(threatPosition).multiply(1.0, 0.0, 1.0);
                 angle = away.lengthSqr() > 1.0E-4 ? Math.atan2(away.z, away.x) + this.randomSigned(0.75) : this.getRandom().nextDouble() * Math.PI * 2.0;
             } else {
-                angle = this.getRandom().nextDouble() * Math.PI * 2.0;
+                Vec3 forward = BirdFlightTargeting.normalizeHorizontal(this.getViewVector(1.0F), this.getLookAngle());
+                angle = attempt < 20
+                        ? Math.atan2(forward.z, forward.x) + this.randomSigned(Math.toRadians(15.0D))
+                        : this.getRandom().nextDouble() * Math.PI * 2.0;
             }
             double radius = minRadius + this.getRandom().nextDouble() * (double)(maxRadius - minRadius);
             int x = origin.getX() + Mth.floor(Math.cos(angle) * radius);
@@ -1133,6 +1278,26 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         return bestTarget;
     }
 
+    private Vec3 findNearestShortFlightLandingTarget(int radius) {
+        BlockPos origin = this.blockPosition();
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        for (int r = 1; r <= radius; ++r) {
+            for (int xOffset = -r; xOffset <= r; ++xOffset) {
+                for (int zOffset = -r; zOffset <= r; ++zOffset) {
+                    if (Math.abs(xOffset) != r && Math.abs(zOffset) != r) {
+                        continue;
+                    }
+                    mutable.set(origin.getX() + xOffset, origin.getY(), origin.getZ() + zOffset);
+                    BlockPos landing = this.findLandingSurface(mutable, 10);
+                    if (landing != null) {
+                        return new Vec3((double)landing.getX() + 0.5, (double)landing.getY() + 0.05, (double)landing.getZ() + 0.5);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private BlockPos findLandingSurface(BlockPos center, int verticalRange) {
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         for (int yOffset = verticalRange; yOffset >= -verticalRange; --yOffset) {
@@ -1145,29 +1310,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     private boolean isSafeShortFlightLanding(BlockPos pos) {
-        if (!this.canReadChunk(pos)) {
-            return false;
-        }
-        BlockState below = this.level().getBlockState(pos.below());
-        BlockState feet = this.level().getBlockState(pos);
-        BlockState head = this.level().getBlockState(pos.above());
-        if (!feet.getCollisionShape((BlockGetter)this.level(), pos).isEmpty() || !head.getCollisionShape((BlockGetter)this.level(), pos.above()).isEmpty()) {
-            return false;
-        }
-        if (this.level().getFluidState(pos).is(FluidTags.WATER) || this.level().getFluidState(pos).is(FluidTags.LAVA)) {
-            return false;
-        }
-        if (below.is(Blocks.CACTUS) || below.is(Blocks.MAGMA_BLOCK) || below.isAir()) {
-            return false;
-        }
-        return below.isFaceSturdy((BlockGetter)this.level(), pos.below(), Direction.UP)
-                || below.is(Blocks.FARMLAND)
-                || below.is(Blocks.HAY_BLOCK)
-                || below.is(Blocks.COMPOSTER)
-                || below.is(BlockTags.LEAVES)
-                || below.is(BlockTags.LOGS)
-                || below.getBlock() instanceof FenceBlock
-                || below.getBlock() instanceof FenceGateBlock;
+        return BirdFlightTargeting.isSafeDryLanding(this, pos);
     }
 
     private double scoreShortFlightLanding(BlockPos pos, Vec3 threatPosition, boolean escape) {
@@ -1242,22 +1385,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     private void faceMovement(Vec3 movement) {
-        double horizontalLength = Math.sqrt(movement.x * movement.x + movement.z * movement.z);
-        if (horizontalLength <= 1.0E-4) {
-            return;
-        }
-        float targetYaw = (float)(Math.atan2(movement.z, movement.x) * 57.2957763671875) - 90.0f;
-        float yaw = targetYaw;
-        float targetPitch = (float)(-(Math.atan2(movement.y, horizontalLength) * 57.2957763671875));
-        float pitch = Mth.clamp(targetPitch, -42.0f, 42.0f);
-        this.setYRot(yaw);
-        this.setYHeadRot(yaw);
-        this.yBodyRot = yaw;
-        this.yBodyRotO = yaw;
-        this.yHeadRot = yaw;
-        this.yHeadRotO = yaw;
-        this.setXRot(pitch);
-        this.xRotO = pitch;
+        BirdFlightController.faceMovement(this, movement, FLIGHT_PROFILE.maxPitchDegrees());
     }
 
     private int randomBetween(int min, int max) {
@@ -1555,18 +1683,13 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     }
 
     private boolean shouldPlayFlyAnimation() {
-        if (this.isControlledFlightActive()) {
-            return true;
-        }
-        SparrowBehaviorState state = this.getBehaviorState();
-        if (state.isAirborne()) {
-            return true;
-        }
-        if (this.airborneFlightAnimationTicks > 0 && !this.onGround()) {
-            return true;
-        }
-        Vec3 movement = this.getDeltaMovement();
-        return !this.onGround() && movement.y > 0.12 && movement.horizontalDistanceSqr() > 0.01;
+        return BirdFlightController.shouldPlayFlyAnimation(
+                this,
+                this.getBehaviorState().isAirborne(),
+                this.onGround(),
+                this.isNoGravity(),
+                this.getDeltaMovement(),
+                this.airborneFlightAnimationTicks);
     }
 
     private <T extends SparrowEntity> PlayState movementController(AnimationState<T> animationState) {
@@ -1649,6 +1772,12 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             this.sparrow.getLookControl().setLookAt(this.owner, 10.0f, this.sparrow.getMaxHeadXRot());
             this.sparrow.setBehaviorState(SparrowBehaviorState.FOLLOWING_OWNER);
             double distanceSqr = this.sparrow.distanceToSqr(this.owner);
+            if (distanceSqr > 64.0 && this.sparrow.onGround() && this.sparrow.flightCooldown <= 0) {
+                Vec3 target = BirdFlightTargeting.findDryLandingTargetNear(this.sparrow, this.owner.blockPosition(), 4, 8);
+                if (target != null && this.sparrow.startControlledFlight(target, this.sparrow.randomBetween(46, 72), SHORT_FLIGHT_SPEED + 0.04D, false)) {
+                    return;
+                }
+            }
             if (distanceSqr > 576.0 && this.sparrow.ownerFollowSuppressedTicks <= 0) {
                 if (--this.teleportAttemptTicks <= 0) {
                     this.teleportAttemptTicks = 20;

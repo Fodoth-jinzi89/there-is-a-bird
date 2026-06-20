@@ -2,6 +2,7 @@ package EdDYON.guaniao.event;
 
 import EdDYON.guaniao.GuaniaoMod;
 import EdDYON.guaniao.content.bird.budgerigar.BudgerigarEntity;
+import EdDYON.guaniao.content.bird.columbid.AbstractColumbidEntity;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
@@ -45,6 +46,8 @@ public final class BirdFlybySpawnEvents {
     private static final TagKey<Biome> NIGHT_HERON_HABITAT = biomeTag("night_heron_habitat");
     private static final TagKey<Biome> SPARROW_HABITAT = biomeTag("sparrow_habitat");
     private static final TagKey<Biome> BUDGERIGAR_HABITAT = biomeTag("budgerigar_habitat");
+    private static final TagKey<Biome> SPOTTED_DOVE_HABITAT = biomeTag("spotted_dove_habitat");
+    private static final TagKey<Biome> PIGEON_HABITAT = biomeTag("pigeon_habitat");
     private static final Map<UUID, Integer> PLAYER_COOLDOWNS = new HashMap<>();
     private static final double VIEW_CHECK_RADIUS_SQR = 96.0D * 96.0D;
     private static final double MIN_HIDDEN_SPAWN_DISTANCE_SQR = 18.0D * 18.0D;
@@ -111,6 +114,7 @@ public final class BirdFlybySpawnEvents {
             case NIGHT_HERON -> spawnNightHeronFlyby(level, path, count, random);
             case SPARROW -> spawnSparrowFlyby(level, path, count, random);
             case BUDGERIGAR -> spawnBudgerigarFlyby(level, path, count, random);
+            case SPOTTED_DOVE, PIGEON -> spawnColumbidFlyby(level, path, count, kind, random);
         };
     }
 
@@ -225,6 +229,47 @@ public final class BirdFlybySpawnEvents {
             }
             nightHeron.startFlybyFlight(direction, landing, 145 + random.nextInt(96));
             level.addFreshEntity(nightHeron);
+            spawned = true;
+        }
+        return spawned;
+    }
+
+    private static boolean spawnColumbidFlyby(ServerLevel level, FlybyPath path, int count, BirdKind kind, RandomSource random) {
+        boolean spawned = false;
+        for (int index = 0; index < count; ++index) {
+            Vec3 spawnPos = path.offsetStart(index, count, random, 1.65D);
+            Vec3 targetPos = path.offsetTarget(index, count, random, 2.0D);
+            Vec3 airPos = findAirPoint(level, spawnPos.x, spawnPos.z, kind, random);
+            BlockPos landing = findDryLandingSurface(level, BlockPos.containing(targetPos), 16);
+            if (airPos == null || landing == null) {
+                continue;
+            }
+            if (!isHiddenFromNearbyPlayers(level, airPos)) {
+                continue;
+            }
+            AbstractColumbidEntity columbid = switch (kind) {
+                case SPOTTED_DOVE -> GuaniaoEntityTypes.SPOTTED_DOVE.get().create(level);
+                case PIGEON -> GuaniaoEntityTypes.PIGEON.get().create(level);
+                default -> null;
+            };
+            if (columbid == null) {
+                continue;
+            }
+            Vec3 target = Vec3.atBottomCenterOf(landing).add(0.0D, 0.08D, 0.0D);
+            Vec3 direction = target.subtract(airPos).multiply(1.0D, 0.0D, 1.0D);
+            if (direction.lengthSqr() <= 1.0E-4D) {
+                direction = path.forward;
+            }
+            direction = direction.normalize();
+            placeMobForFlyby(columbid, airPos, direction);
+            columbid.finalizeSpawn(level, level.getCurrentDifficultyAt(columbid.blockPosition()), MobSpawnType.NATURAL, null, null);
+            if (!level.noCollision((Entity)columbid, columbid.getBoundingBox())) {
+                continue;
+            }
+            if (!columbid.startFlybyFlight(target, 150 + random.nextInt(91))) {
+                continue;
+            }
+            level.addFreshEntity(columbid);
             spawned = true;
         }
         return spawned;
@@ -348,6 +393,8 @@ public final class BirdFlybySpawnEvents {
             case NIGHT_HERON -> level.getEntitiesOfClass(NightHeronEntity.class, area).size();
             case SPARROW -> level.getEntitiesOfClass(SparrowEntity.class, area).size();
             case BUDGERIGAR -> level.getEntitiesOfClass(BudgerigarEntity.class, area).size();
+            case SPOTTED_DOVE -> level.getEntitiesOfClass(EdDYON.guaniao.content.bird.columbid.SpottedDoveEntity.class, area).size();
+            case PIGEON -> level.getEntitiesOfClass(EdDYON.guaniao.content.bird.columbid.PigeonEntity.class, area).size();
         };
     }
 
@@ -411,7 +458,9 @@ public final class BirdFlybySpawnEvents {
     private enum BirdKind {
         NIGHT_HERON(NIGHT_HERON_HABITAT, 3, 1, 1, 8, 17, 20.0D, 8.0D, 4),
         SPARROW(SPARROW_HABITAT, 9, 2, 5, 4, 9, 15.0D, 8.0D, 24),
-        BUDGERIGAR(BUDGERIGAR_HABITAT, 8, 2, 5, 6, 13, 17.0D, 8.0D, 22);
+        BUDGERIGAR(BUDGERIGAR_HABITAT, 8, 2, 5, 6, 13, 17.0D, 8.0D, 22),
+        SPOTTED_DOVE(SPOTTED_DOVE_HABITAT, 6, 1, 3, 10, 21, 21.0D, 10.0D, 14),
+        PIGEON(PIGEON_HABITAT, 7, 1, 4, 11, 23, 22.0D, 11.0D, 16);
 
         private final TagKey<Biome> habitatTag;
         private final int weight;
@@ -445,6 +494,7 @@ public final class BirdFlybySpawnEvents {
                 case NIGHT_HERON -> time >= 11000L || time <= 2000L;
                 case SPARROW -> !level.isThundering() && (time >= 23000L || time < 12500L);
                 case BUDGERIGAR -> !level.isThundering() && (time >= 23000L || time < 11500L);
+                case SPOTTED_DOVE, PIGEON -> !level.isThundering() && (time >= 23000L || time < 13000L);
             };
         }
     }

@@ -1,9 +1,15 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
+import EdDYON.guaniao.content.bird.flight.BirdFlightAware;
+import EdDYON.guaniao.content.bird.flight.BirdFlightController;
+import EdDYON.guaniao.content.bird.flight.BirdFlightProfile;
 import EdDYON.guaniao.content.bird.scale.BirdModelScale;
 import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
+import EdDYON.guaniao.content.bath.BirdBathAttraction;
+import EdDYON.guaniao.content.bath.BirdBathContentType;
+import EdDYON.guaniao.content.bath.BirdBathUseGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronAmbientFlightGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronBehaviorState;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronFlightController;
@@ -71,7 +77,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class NightHeronEntity
 extends PathfinderMob
-implements GeoEntity, ScalableBirdModel {
+implements GeoEntity, ScalableBirdModel, BirdFlightAware {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(NightHeronEntity.class, (EntityDataSerializer)EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(NightHeronEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<ItemStack> HELD_FISH = SynchedEntityData.defineId(NightHeronEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -127,6 +133,7 @@ implements GeoEntity, ScalableBirdModel {
 
     public NightHeronEntity(EntityType<? extends NightHeronEntity> entityType, Level level) {
         super(entityType, level);
+        this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0f);
         this.setPathfindingMalus(BlockPathTypes.WATER, -1.0f);
         this.setPathfindingMalus(BlockPathTypes.WATER_BORDER, 0.0f);
     }
@@ -170,14 +177,24 @@ implements GeoEntity, ScalableBirdModel {
         this.goalSelector.addGoal(1, (Goal)new NightHeronFrightGoal(this));
         this.goalSelector.addGoal(3, (Goal)new NightHeronEatThrownFishGoal(this));
         this.goalSelector.addGoal(4, (Goal)new TemptGoal((PathfinderMob)this, 1.0, TEMPT_ITEMS, false));
-        this.goalSelector.addGoal(5, (Goal)new NightHeronForagingGoal(this));
-        this.goalSelector.addGoal(6, (Goal)new NightHeronHighTransitGoal(this));
-        this.goalSelector.addGoal(7, (Goal)new NightHeronAmbientFlightGoal(this));
-        this.goalSelector.addGoal(8, (Goal)new NightHeronRoostFlightGoal(this));
-        this.goalSelector.addGoal(9, (Goal)new NightHeronRoostGoal(this));
-        this.goalSelector.addGoal(10, (Goal)new NightHeronFlockGoal(this));
-        this.goalSelector.addGoal(11, (Goal)new NightHeronIdleGoal(this));
-        this.goalSelector.addGoal(12, (Goal)new RandomLookAroundGoal((Mob)this));
+        this.goalSelector.addGoal(5, (Goal)new BirdBathUseGoal(this, 1.0D, 13.0D, 42,
+                BirdBathAttraction::isAttractiveToNightHeron,
+                this::canUseBirdBath,
+                bath -> this.setBehaviorState(NightHeronBehaviorState.FORAGING),
+                this::consumeBirdBathServing,
+                (bath, consumed) -> {
+                    if (!this.isEatingFish() && this.getBehaviorState() == NightHeronBehaviorState.FORAGING) {
+                        this.setBehaviorState(NightHeronBehaviorState.IDLE);
+                    }
+                }));
+        this.goalSelector.addGoal(6, (Goal)new NightHeronForagingGoal(this));
+        this.goalSelector.addGoal(7, (Goal)new NightHeronHighTransitGoal(this));
+        this.goalSelector.addGoal(8, (Goal)new NightHeronAmbientFlightGoal(this));
+        this.goalSelector.addGoal(9, (Goal)new NightHeronRoostFlightGoal(this));
+        this.goalSelector.addGoal(10, (Goal)new NightHeronRoostGoal(this));
+        this.goalSelector.addGoal(11, (Goal)new NightHeronFlockGoal(this));
+        this.goalSelector.addGoal(12, (Goal)new NightHeronIdleGoal(this));
+        this.goalSelector.addGoal(13, (Goal)new RandomLookAroundGoal((Mob)this));
     }
 
     public void aiStep() {
@@ -227,6 +244,8 @@ implements GeoEntity, ScalableBirdModel {
         }
         if (this.getBehaviorState().isAirborne()) {
             this.faceMovementDirection(this.getDeltaMovement());
+        } else {
+            this.tickGroundMovementFacing();
         }
     }
 
@@ -363,6 +382,26 @@ implements GeoEntity, ScalableBirdModel {
 
     public BirdBrain birdBrain() {
         return this.birdBrain;
+    }
+
+    @Override
+    public BirdFlightProfile birdFlightProfile() {
+        return BirdFlightProfile.NIGHT_HERON;
+    }
+
+    @Override
+    public boolean isBirdFlightActive() {
+        return this.isControlledFlightActive() || this.getBehaviorState().isAirborne();
+    }
+
+    @Override
+    public boolean isBirdLanding() {
+        return this.getBehaviorState() == NightHeronBehaviorState.LANDING;
+    }
+
+    @Override
+    public boolean isBirdEscaping() {
+        return this.getBehaviorState().isEscape();
     }
 
     public void startFlybyFlight(Vec3 direction, int ticks) {
@@ -599,6 +638,30 @@ implements GeoEntity, ScalableBirdModel {
                 && this.birdBrain().motivation().fear() < 0.55F;
     }
 
+    private boolean canUseBirdBath() {
+        NightHeronBehaviorState state = this.getBehaviorState();
+        return !this.isEatingFish()
+                && this.thrownFishEatCooldown <= 0
+                && this.onGround()
+                && !state.isAirborne()
+                && !state.isEscape()
+                && state != NightHeronBehaviorState.ROOSTING
+                && this.getTarget() == null
+                && !this.hasExternalFright()
+                && this.birdBrain().motivation().fear() < 0.60F;
+    }
+
+    private void consumeBirdBathServing(EdDYON.guaniao.content.bath.BirdBathBlockEntity bath, BirdBathContentType contentType) {
+        if (contentType == BirdBathContentType.FISH) {
+            this.startEatingFish(new ItemStack(Items.COD), 45 + this.getRandom().nextInt(21));
+            return;
+        }
+        this.birdBrain.onEat(0.18F);
+        this.setBehaviorState(NightHeronBehaviorState.FORAGING);
+        this.forcedIdleAnimationTicks = Math.max(this.forcedIdleAnimationTicks, 24);
+        this.playSound(SoundEvents.GENERIC_DRINK, 0.42F, 0.9F + this.getRandom().nextFloat() * 0.12F);
+    }
+
     static boolean isEdibleFishItem(ItemStack stack) {
         return !stack.isEmpty() && TEMPT_ITEMS.test(stack);
     }
@@ -750,22 +813,35 @@ implements GeoEntity, ScalableBirdModel {
     }
 
     void faceMovementDirection(Vec3 movement) {
-        double horizontalLength = Math.sqrt(movement.x * movement.x + movement.z * movement.z);
-        if (horizontalLength <= 1.0E-4) {
+        BirdFlightController.faceMovement(this, movement, BirdFlightProfile.NIGHT_HERON.maxPitchDegrees());
+    }
+
+    private void tickGroundMovementFacing() {
+        if (!this.shouldFaceGroundMovement()) {
             return;
         }
-        float targetYaw = (float)(Mth.atan2((double)movement.z, (double)movement.x) * 57.29577951308232) - 90.0f;
-        float yaw = targetYaw;
-        float targetPitch = (float)(-(Math.atan2(movement.y, horizontalLength) * 57.29577951308232));
-        float pitch = Mth.clamp(targetPitch, -36.0f, 36.0f);
-        this.setYRot(yaw);
-        this.setYHeadRot(yaw);
-        this.yBodyRot = yaw;
-        this.yBodyRotO = yaw;
-        this.yHeadRot = yaw;
-        this.yHeadRotO = yaw;
-        this.setXRot(pitch);
-        this.xRotO = pitch;
+        BirdFlightController.faceGroundMovement(this, this.getDeltaMovement(), 1.0E-4D);
+    }
+
+    private boolean shouldFaceGroundMovement() {
+        if (!this.onGround()
+                || this.isControlledFlightActive()
+                || this.isInWaterOrBubble()
+                || this.isPassenger()) {
+            return false;
+        }
+        NightHeronBehaviorState state = this.getBehaviorState();
+        if (state.isAirborne()
+                || state == NightHeronBehaviorState.EATING
+                || state == NightHeronBehaviorState.PREEN
+                || state == NightHeronBehaviorState.NECK_STRETCH
+                || state == NightHeronBehaviorState.REST_STAND
+                || state == NightHeronBehaviorState.LOOK_AROUND
+                || state == NightHeronBehaviorState.ALERT_FREEZE
+                || state == NightHeronBehaviorState.ROOSTING) {
+            return false;
+        }
+        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
     }
 
     double heightAboveSurface() {
@@ -939,13 +1015,16 @@ implements GeoEntity, ScalableBirdModel {
     }
 
     private boolean shouldUseFlyingAnimation() {
-        if (this.isControlledFlightActive()) {
-            return true;
-        }
-        if (this.onGround() || this.isInWaterOrBubble()) {
+        if (this.isInWaterOrBubble()) {
             return false;
         }
-        return Math.abs(this.getDeltaMovement().y) > 0.08 || this.getDeltaMovement().horizontalDistanceSqr() > 0.03;
+        return BirdFlightController.shouldPlayFlyAnimation(
+                this,
+                this.getBehaviorState().isAirborne(),
+                this.onGround(),
+                this.isNoGravity(),
+                this.getDeltaMovement(),
+                this.groundedAirborneTicks);
     }
 
     private RawAnimation chooseFlyingAnimation() {

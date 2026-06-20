@@ -1,5 +1,7 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
+import EdDYON.guaniao.content.bird.flight.BirdFlightBoids;
+import EdDYON.guaniao.content.bird.flight.BirdFlightController;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronBehaviorState;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import net.minecraft.core.BlockPos;
@@ -95,6 +97,7 @@ public final class NightHeronFlightController {
         }
         double verticalSpeed = height > (glidePathHeight = Mth.clamp((double)(horizontalDistance * 0.18 + 0.55), (double)0.85, (double)7.0)) ? -Mth.clamp((double)((height - glidePathHeight) * 0.038), (double)0.025, (double)0.11) : (height < glidePathHeight - 1.4 && horizontalDistance > 7.0 ? 0.028 : (height > 1.3 ? -0.026 : -0.012));
         double speed = horizontalDistance > 7.0 ? 0.28 : 0.24;
+        speed = BirdFlightController.decelerateNearLanding(speed, horizontalDistance, 5.0D, 0.46D);
         Vec3 desired = approachDirection.scale(speed).add(0.0, verticalSpeed, 0.0);
         Vec3 movement = nightHeron.getDeltaMovement().scale(0.58).add(desired.scale(0.42));
         NightHeronFlightController.applyMovement(nightHeron, movement);
@@ -143,7 +146,14 @@ public final class NightHeronFlightController {
 
     private static void tickDirectedFlight(NightHeronEntity nightHeron, Vec3 direction, double speed, double targetHeight, double maxHeight, double cruiseDescent, boolean allowGlide, NightHeronBehaviorState defaultFlightState) {
         double lift;
-        Vec3 safeDirection = NightHeronFlightController.chooseOpenDirection(nightHeron, NightHeronFlightController.normalizeHorizontal(direction, nightHeron.getLookAngle()), defaultFlightState == NightHeronBehaviorState.LOCAL_FLIGHT ? 4.0 : 6.0);
+        Vec3 requestedDirection = NightHeronFlightController.normalizeHorizontal(direction, nightHeron.getLookAngle());
+        if (defaultFlightState != NightHeronBehaviorState.LOCAL_FLIGHT) {
+            Vec3 flockHeading = BirdFlightBoids.sameTypeHeading(nightHeron, 26.0D, 5.0D, 0.018D, 0.34D, 0.06D, defaultFlightState.isEscape() ? 0.14D : 0.06D);
+            if (flockHeading.lengthSqr() > 1.0E-4) {
+                requestedDirection = NightHeronFlightController.normalizeHorizontal(requestedDirection.add(flockHeading), requestedDirection);
+            }
+        }
+        Vec3 safeDirection = NightHeronFlightController.chooseOpenDirection(nightHeron, requestedDirection, defaultFlightState == NightHeronBehaviorState.LOCAL_FLIGHT ? 4.0 : 6.0);
         double height = nightHeron.heightAboveSurface();
         Vec3 currentMovement = nightHeron.getDeltaMovement();
         double clearScore = NightHeronFlightController.airPathScore(nightHeron, safeDirection, 3.2, 0.25);

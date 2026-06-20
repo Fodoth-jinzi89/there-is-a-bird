@@ -9,7 +9,7 @@ public final class SpottedDoveDefinition {
     public static final float HEIGHT = 0.58F;
     public static final double MAX_HEALTH = 8.0D;
     public static final double WALK_SPEED = 0.22D;
-    public static final double FLYING_SPEED = 0.40D;
+    public static final double FLYING_SPEED = 0.43D;
     public static final double FOLLOW_RANGE = 20.0D;
 
     private SpottedDoveDefinition() {

@@ -3,6 +3,9 @@ loaderVersion = "[47,)"
 license = "All Rights Reserved"
 issueTrackerURL = ""
 
+[[mixins]]
+config = "guaniao.mixins.json"
+
 [[mods]]
 modId = "guaniao"
 version = "${file.jarVersion}"

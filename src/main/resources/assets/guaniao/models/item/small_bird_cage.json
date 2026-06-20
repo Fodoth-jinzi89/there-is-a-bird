@@ -1,6 +1,4 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "guaniao:item/small_bird_cage"
-  }
+  "parent": "builtin/entity",
+  "gui_light": "front"
 }
