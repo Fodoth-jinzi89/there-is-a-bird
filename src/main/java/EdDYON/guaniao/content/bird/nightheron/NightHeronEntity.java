@@ -9,6 +9,8 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
 import EdDYON.guaniao.content.bath.BirdBathAttraction;
 import EdDYON.guaniao.content.bath.BirdBathContentType;
+import EdDYON.guaniao.content.bath.BirdBathFeedingAnimatable;
+import EdDYON.guaniao.content.bath.BirdBathMountable;
 import EdDYON.guaniao.content.bath.BirdBathUseGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronAmbientFlightGoal;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronBehaviorState;
@@ -77,7 +79,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class NightHeronEntity
 extends PathfinderMob
-implements GeoEntity, ScalableBirdModel, BirdFlightAware {
+implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(NightHeronEntity.class, (EntityDataSerializer)EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(NightHeronEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<ItemStack> HELD_FISH = SynchedEntityData.defineId(NightHeronEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -425,6 +427,47 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware {
         this.hasImpulse = true;
     }
 
+    @Override
+    public boolean startBirdBathMountFlight(Vec3 standPosition) {
+        if (standPosition == null || this.isControlledFlightActive()) {
+            return false;
+        }
+        Vec3 horizontal = standPosition.subtract(this.position()).multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() <= 1.0E-4D) {
+            horizontal = Vec3.ZERO;
+        } else {
+            horizontal = horizontal.normalize().scale(0.24D);
+        }
+        Vec3 movement = new Vec3(horizontal.x, 0.62D, horizontal.z);
+        this.getNavigation().stop();
+        this.markTakeoffFlapping();
+        this.setOnGround(false);
+        this.setDeltaMovement(movement);
+        this.faceMovementDirection(movement);
+        this.fallDistance = 0.0F;
+        this.hasImpulse = true;
+        return true;
+    }
+
+    @Override
+    public void startBirdBathFeedingAnimation(BirdBathContentType contentType, int ticks) {
+        this.getNavigation().stop();
+        if (contentType == BirdBathContentType.FISH) {
+            this.showHeldFoodDuringBirdBathFeeding(new ItemStack(Items.COD), ticks);
+            return;
+        }
+        if (contentType == BirdBathContentType.MEAT) {
+            this.showHeldFoodDuringBirdBathFeeding(new ItemStack(Items.CHICKEN), ticks);
+            return;
+        }
+        if (contentType == BirdBathContentType.BREAD) {
+            this.showHeldFoodDuringBirdBathFeeding(new ItemStack(Items.BREAD), ticks);
+            return;
+        }
+        this.setBehaviorState(NightHeronBehaviorState.FORAGING);
+        this.forcedIdleAnimationTicks = Math.max(this.forcedIdleAnimationTicks, Math.max(24, ticks / 2));
+    }
+
     public void setGuidePreviewAnimation(GuidePreviewAnimation guidePreviewAnimation) {
         this.guidePreviewAnimation = guidePreviewAnimation == null ? GuidePreviewAnimation.NONE : guidePreviewAnimation;
     }
@@ -693,6 +736,17 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware {
         this.nextIdleAnimationSwapTick = this.level().getGameTime() + (long)ticks;
         this.birdBrain.onEat(0.45F);
         this.playSound(GuaniaoSoundEvents.NIGHT_HERON_ATTACK.get(), 0.55f, 0.9f + this.getRandom().nextFloat() * 0.18f);
+    }
+
+    private void showHeldFoodDuringBirdBathFeeding(ItemStack foodStack, int ticks) {
+        ItemStack copy = foodStack.copy();
+        copy.setCount(1);
+        this.entityData.set(HELD_FISH, copy);
+        this.entityData.set(EATING_TICKS, Math.max(1, ticks));
+        this.getNavigation().stop();
+        this.setBehaviorState(NightHeronBehaviorState.EATING);
+        this.forcedIdleAnimationTicks = Math.max(this.forcedIdleAnimationTicks, ticks);
+        this.nextIdleAnimationSwapTick = this.level().getGameTime() + (long)ticks;
     }
 
     private void tickEatingFish() {

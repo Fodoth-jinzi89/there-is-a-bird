@@ -9,6 +9,7 @@ import EdDYON.guaniao.content.bird.columbid.SpottedDoveEntity;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowDefinition;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
+import EdDYON.guaniao.content.camera.PhotographEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -25,6 +26,12 @@ public final class GuaniaoEntityTypes {
     public static final RegistryObject<EntityType<BudgerigarEntity>> BUDGERIGAR = GuaniaoEntityTypes.registerCreature(BudgerigarDefinition.ENTITY_ID, BudgerigarEntity::new, BudgerigarDefinition.WIDTH, BudgerigarDefinition.HEIGHT);
     public static final RegistryObject<EntityType<SpottedDoveEntity>> SPOTTED_DOVE = GuaniaoEntityTypes.registerCreature(SpottedDoveDefinition.ENTITY_ID, SpottedDoveEntity::new, SpottedDoveDefinition.WIDTH, SpottedDoveDefinition.HEIGHT);
     public static final RegistryObject<EntityType<PigeonEntity>> PIGEON = GuaniaoEntityTypes.registerCreature(PigeonDefinition.ENTITY_ID, PigeonEntity::new, PigeonDefinition.WIDTH, PigeonDefinition.HEIGHT);
+    public static final RegistryObject<EntityType<PhotographEntity>> PHOTOGRAPH = ENTITY_TYPES.register("photograph", () ->
+            EntityType.Builder.<PhotographEntity>of(PhotographEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(10)
+                    .updateInterval(Integer.MAX_VALUE)
+                    .build(new ResourceLocation("guaniao", "photograph").toString()));
 
     private GuaniaoEntityTypes() {
     }

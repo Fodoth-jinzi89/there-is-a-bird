@@ -118,5 +118,43 @@
       "guaniao:entity/budgerigar/idle11",
       "guaniao:entity/budgerigar/idle12"
     ]
+  },
+  "entity.spotted_dove.ambient": {
+    "subtitle": "subtitles.guaniao.entity.spotted_dove.ambient",
+    "sounds": [
+      "guaniao:entity/spotted_dove/idle",
+      "guaniao:entity/spotted_dove/idle2",
+      {
+        "name": "guaniao:entity/spotted_dove/mate",
+        "weight": 2
+      }
+    ]
+  },
+  "entity.spotted_dove.hurt": {
+    "subtitle": "subtitles.guaniao.entity.spotted_dove.hurt",
+    "sounds": [
+      "guaniao:entity/spotted_dove/idle",
+      "guaniao:entity/spotted_dove/idle2"
+    ]
+  },
+  "entity.spotted_dove.death": {
+    "subtitle": "subtitles.guaniao.entity.spotted_dove.death",
+    "sounds": [
+      "guaniao:entity/spotted_dove/idle",
+      "guaniao:entity/spotted_dove/idle2"
+    ]
+  },
+  "entity.spotted_dove.mate": {
+    "subtitle": "subtitles.guaniao.entity.spotted_dove.mate",
+    "sounds": [
+      "guaniao:entity/spotted_dove/mate"
+    ]
+  },
+  "entity.pigeon.ambient": {
+    "subtitle": "subtitles.guaniao.entity.pigeon.ambient",
+    "sounds": [
+      "guaniao:entity/pigeon/pigeon_call_1",
+      "guaniao:entity/pigeon/pigeon_coo_1"
+    ]
   }
 }

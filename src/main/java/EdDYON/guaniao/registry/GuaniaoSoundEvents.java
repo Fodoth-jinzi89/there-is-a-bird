@@ -21,6 +21,11 @@ public final class GuaniaoSoundEvents {
     public static final RegistryObject<SoundEvent> BUDGERIGAR_HURT = register("entity.budgerigar.hurt");
     public static final RegistryObject<SoundEvent> BUDGERIGAR_DEATH = register("entity.budgerigar.death");
     public static final RegistryObject<SoundEvent> BUDGERIGAR_INTERACT = register("entity.budgerigar.interact");
+    public static final RegistryObject<SoundEvent> SPOTTED_DOVE_AMBIENT = register("entity.spotted_dove.ambient");
+    public static final RegistryObject<SoundEvent> SPOTTED_DOVE_HURT = register("entity.spotted_dove.hurt");
+    public static final RegistryObject<SoundEvent> SPOTTED_DOVE_DEATH = register("entity.spotted_dove.death");
+    public static final RegistryObject<SoundEvent> SPOTTED_DOVE_MATE = register("entity.spotted_dove.mate");
+    public static final RegistryObject<SoundEvent> PIGEON_AMBIENT = register("entity.pigeon.ambient");
 
     private GuaniaoSoundEvents() {
     }

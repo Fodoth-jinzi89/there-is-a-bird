@@ -1,6 +1,9 @@
 package EdDYON.guaniao.registry;
 
 import java.util.function.Supplier;
+import EdDYON.guaniao.content.camera.FilmItem;
+import EdDYON.guaniao.content.camera.NikonD750Item;
+import EdDYON.guaniao.content.camera.PhotographItem;
 import EdDYON.guaniao.content.guide.BirdGuideItem;
 import EdDYON.guaniao.content.bird.budgerigar.BudgerigarDefinition;
 import EdDYON.guaniao.content.bird.columbid.PigeonDefinition;
@@ -31,6 +34,9 @@ public final class GuaniaoItems {
     public static final RegistryObject<Item> PIGEON_SPAWN_EGG = GuaniaoItems.registerSpawnEgg(PigeonDefinition.SPAWN_EGG_ID, GuaniaoEntityTypes.PIGEON, PigeonDefinition.SPAWN_EGG_BASE_COLOR, PigeonDefinition.SPAWN_EGG_SPOT_COLOR);
     public static final RegistryObject<Item> BREADCRUMBS = ITEMS.register("breadcrumbs", () -> new BreadcrumbItem(new Item.Properties()));
     public static final RegistryObject<Item> BIRD_GUIDE = ITEMS.register("bird_guide", () -> new BirdGuideItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> NIKON_D750 = ITEMS.register("nikon_d750", () -> new NikonD750Item(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> FILM = ITEMS.register("film", () -> new FilmItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> PHOTOGRAPH = ITEMS.register("photograph", () -> new PhotographItem(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> SMALL_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.SMALL, GuaniaoBlocks.SMALL_BIRD_CAGE);
     public static final RegistryObject<Item> MEDIUM_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.MEDIUM, GuaniaoBlocks.MEDIUM_BIRD_CAGE);
     public static final RegistryObject<Item> LARGE_BIRD_CAGE = GuaniaoItems.registerBirdCageItem(BirdCageVariant.LARGE, GuaniaoBlocks.LARGE_BIRD_CAGE);

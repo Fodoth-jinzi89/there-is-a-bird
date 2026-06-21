@@ -13,6 +13,8 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
 import EdDYON.guaniao.content.bath.BirdBathAttraction;
 import EdDYON.guaniao.content.bath.BirdBathContentType;
+import EdDYON.guaniao.content.bath.BirdBathFeedingAnimatable;
+import EdDYON.guaniao.content.bath.BirdBathMountable;
 import EdDYON.guaniao.content.bath.BirdBathUseGoal;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import java.util.EnumSet;
@@ -46,7 +48,6 @@ import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -82,7 +83,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware {
+public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.FLOAT);
     private static final double WALKING_SPEED_THRESHOLD = 0.0025D;
@@ -116,6 +117,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     protected int flightDuration;
     protected int timeFlying;
     protected int flightLandingTicks;
+    protected int landingSettleTicks;
     protected int flapOnceTicks;
     protected int pairScanCooldown;
     protected int pairLostTicks;
@@ -135,7 +137,6 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
     protected AbstractColumbidEntity(EntityType<? extends AbstractColumbidEntity> entityType, Level level, BirdSpeciesProfile profile) {
         super(entityType, level);
         this.birdBrain = new BirdBrain(this, profile);
-        this.moveControl = new FlyingMoveControl(this, 10, true);
         this.setPathfindingMalus(BlockPathTypes.LEAVES, 0.0F);
         this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
@@ -301,6 +302,9 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         }
         if (this.flightCooldown > 0) {
             --this.flightCooldown;
+        }
+        if (this.landingSettleTicks > 0) {
+            --this.landingSettleTicks;
         }
         if (this.flapOnceTicks > 0) {
             --this.flapOnceTicks;
@@ -566,6 +570,40 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return this.startAutonomousCruiseFlight(landingTarget, duration);
     }
 
+    @Override
+    public boolean startBirdBathMountFlight(Vec3 standPosition) {
+        if (standPosition == null || this.isControlledFlightActive()) {
+            return false;
+        }
+        Vec3 horizontal = standPosition.subtract(this.position()).multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() <= 1.0E-4D) {
+            horizontal = Vec3.ZERO;
+        } else {
+            horizontal = horizontal.normalize().scale(0.28D);
+        }
+        Vec3 movement = new Vec3(horizontal.x, 0.66D, horizontal.z);
+        this.getNavigation().stop();
+        this.setNoGravity(false);
+        this.setOnGround(false);
+        this.flapOnceTicks = Math.max(this.flapOnceTicks, 24);
+        this.setBehaviorStateFor(ColumbidBehaviorState.FLAP_FLYING, 34);
+        this.setDeltaMovement(movement);
+        this.faceFlightDirection(movement);
+        this.fallDistance = 0.0F;
+        this.hasImpulse = true;
+        return true;
+    }
+
+    @Override
+    public void startBirdBathFeedingAnimation(BirdBathContentType contentType, int ticks) {
+        this.getNavigation().stop();
+        if (contentType.isFood()) {
+            this.triggerEatingAnimation(Math.max(32, ticks));
+            return;
+        }
+        this.triggerPeckAnimation(Math.max(24, ticks / 2));
+    }
+
     private boolean startAutonomousCruiseFlight(Vec3 landingTarget, int duration) {
         return this.startControlledFlight(landingTarget, duration, HIGH_FLIGHT_SPEED, false, true, true);
     }
@@ -692,6 +730,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         return this.isActiveTime()
                 && this.onGround()
                 && !this.isControlledFlightActive()
+                && this.landingSettleTicks <= 0
                 && !this.isInWaterOrBubble()
                 && !this.getBehaviorState().isEscape()
                 && this.getTarget() == null;
@@ -815,6 +854,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         double landingDistance = toLanding.length();
         double horizontalDistance = Math.sqrt(toLanding.x * toLanding.x + toLanding.z * toLanding.z);
         int flightAge = this.flightDuration - this.flightTicks;
+        if (this.onGround() && flightAge > 8) {
+            this.finishControlledFlight(true);
+            return;
+        }
         if ((this.onGround() && flightAge > 14 && horizontalDistance < 1.6D) || (landingDistance < 0.95D && this.onGround())) {
             this.finishControlledFlight(true);
             return;
@@ -837,6 +880,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         Vec3 toSteeringTarget = steeringTarget.subtract(this.position());
         Vec3 horizontal = new Vec3(toSteeringTarget.x, 0.0D, toSteeringTarget.z);
         double heightAboveLanding = this.getY() - this.flightTarget.y;
+        boolean closeLandingApproach = landingPhase && horizontalDistance < 1.25D;
         if (horizontal.lengthSqr() <= 1.0E-4D) {
             horizontal = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D);
         }
@@ -846,10 +890,16 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                 horizontal = drift;
             }
         }
-        if (horizontal.lengthSqr() <= 1.0E-4D) {
-            horizontal = this.randomHorizontalDirection();
+        if (closeLandingApproach && horizontalDistance < 0.55D) {
+            horizontal = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D);
         }
-        horizontal = horizontal.normalize();
+        if (horizontal.lengthSqr() <= 1.0E-4D) {
+            horizontal = closeLandingApproach ? Vec3.ZERO : this.randomHorizontalDirection();
+        }
+        boolean hasHorizontalSteering = horizontal.lengthSqr() > 1.0E-4D;
+        if (hasHorizontalSteering) {
+            horizontal = horizontal.normalize();
+        }
         if (!landingPhase) {
             Vec3 flockHeading = BirdFlightBoids.sameTypeHeading(this, 30.0D, 4.6D, 0.030D, 0.52D, 0.11D, this.escapeFlight ? 0.20D : 0.09D);
             if (flockHeading.lengthSqr() > 1.0E-4D) {
@@ -857,8 +907,11 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             }
         }
         double speed = landingPhase
-                ? BirdFlightController.decelerateNearLanding(this.flightSpeed, horizontalDistance, this.highCruiseFlight ? 7.0D : 4.0D, 0.44D)
+                ? BirdFlightController.decelerateNearLanding(this.flightSpeed, horizontalDistance, this.highCruiseFlight ? 7.0D : 4.0D, 0.22D)
                 : this.flightSpeed;
+        if (closeLandingApproach) {
+            speed = Math.min(speed, 0.035D + horizontalDistance * 0.06D);
+        }
         if (this.highCruiseFlight && !landingPhase) {
             speed = this.autonomousCruiseFlight ? Math.min(speed, HIGH_FLIGHT_SPEED) : Math.min(speed + 0.015D, ESCAPE_FLIGHT_SPEED);
         }
@@ -866,9 +919,11 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         if (!landingPhase && this.getY() < this.flightCruiseY - 1.0D) {
             lift = Math.max(lift, Mth.clamp((this.flightCruiseY - this.getY()) * 0.08D, 0.10D, this.escapeFlight ? 0.25D : 0.21D));
         }
-        if (landingPhase && heightAboveLanding > 2.5D) {
+        if (landingPhase && heightAboveLanding > 2.5D && horizontalDistance > 1.6D) {
             speed = Math.max(speed, this.flightSpeed * (heightAboveLanding > 5.0D ? 0.66D : 0.48D));
             lift = Math.min(lift, this.highCruiseFlight ? -0.066D : -0.048D);
+        } else if (landingPhase && heightAboveLanding > 2.5D) {
+            lift = Math.min(lift, this.highCruiseFlight ? -0.055D : -0.042D);
         }
         if (landingPhase && heightAboveLanding < 1.25D) {
             lift = Math.max(lift, -0.024D);
@@ -895,7 +950,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                 return;
             }
         }
-        Vec3 desired = horizontal.scale(speed).add(0.0D, lift, 0.0D);
+        Vec3 desired = (hasHorizontalSteering ? horizontal.scale(speed) : Vec3.ZERO).add(0.0D, lift, 0.0D);
         Vec3 movement = this.getDeltaMovement().scale(0.42D).add(desired.scale(0.58D));
         if (!landingPhase && BirdFlightController.isStalledInAir(this, this.timeFlying, 0.008D)) {
             Vec3 nextWaypoint = this.chooseAutonomousFlightWaypoint(horizontal);
@@ -938,8 +993,14 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.flightCruiseY = 0.0D;
         this.flapOnceTicks = 0;
         this.setNoGravity(false);
+        this.getNavigation().stop();
         Vec3 movement = this.getDeltaMovement();
-        this.setDeltaMovement(movement.x * 0.35D, landed ? 0.0D : Math.max(movement.y * 0.3D, -0.04D), movement.z * 0.35D);
+        if (landed) {
+            this.landingSettleTicks = Math.max(this.landingSettleTicks, 18);
+            this.setDeltaMovement(Vec3.ZERO);
+        } else {
+            this.setDeltaMovement(movement.x * 0.35D, Math.max(movement.y * 0.3D, -0.04D), movement.z * 0.35D);
+        }
         if (this.getBehaviorState().isAirborne()) {
             this.setBehaviorStateFor(ColumbidBehaviorState.ALERT, 24);
         }
@@ -958,6 +1019,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         this.flightWaypointTicks = 0;
         this.flightCruiseY = 0.0D;
         this.flapOnceTicks = 0;
+        this.landingSettleTicks = 0;
         this.setNoGravity(false);
     }
 
@@ -1432,6 +1494,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         private final AbstractColumbidEntity columbid;
         private BlockPos roostPos;
         private int roostTicks;
+        private int repathTicks;
 
         ColumbidRoostGoal(AbstractColumbidEntity columbid) {
             this.columbid = columbid;
@@ -1455,6 +1518,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         @Override
         public void start() {
             this.roostTicks = 260 + this.columbid.getRandom().nextInt(360);
+            this.repathTicks = 0;
             this.columbid.setBehaviorState(ColumbidBehaviorState.ROOSTING);
         }
 
@@ -1468,7 +1532,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                     this.columbid.startControlledFlight(target, 95, HIGH_FLIGHT_SPEED, false, true);
                     return;
                 }
-                this.columbid.getNavigation().moveTo(target.x, target.y, target.z, 0.9D);
+                if (--this.repathTicks <= 0 || this.columbid.getNavigation().isDone()) {
+                    this.repathTicks = 18 + this.columbid.getRandom().nextInt(16);
+                    this.columbid.getNavigation().moveTo(target.x, target.y, target.z, 0.9D);
+                }
                 return;
             }
             this.columbid.getNavigation().stop();
@@ -1481,6 +1548,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         @Override
         public void stop() {
             this.roostPos = null;
+            this.repathTicks = 0;
             if (this.columbid.getBehaviorState() == ColumbidBehaviorState.ROOSTING) {
                 this.columbid.setBehaviorState(ColumbidBehaviorState.IDLE);
             }
@@ -1738,7 +1806,10 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
             }
             double distanceSqr = this.columbid.distanceToSqr(this.partner);
             if (distanceSqr > 20.0D) {
-                this.columbid.getNavigation().moveTo(this.partner, 0.68D);
+                if (this.stepCooldown <= 0 || this.columbid.getNavigation().isDone()) {
+                    this.stepCooldown = 12 + this.columbid.getRandom().nextInt(10);
+                    this.columbid.getNavigation().moveTo(this.partner, 0.68D);
+                }
                 return;
             }
             if (distanceSqr < 2.2D) {
@@ -1782,6 +1853,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         private final AbstractColumbidEntity columbid;
         private LivingEntity target;
         private int chaseTicks;
+        private int repathTicks;
 
         ColumbidChaseSmallBirdGoal(AbstractColumbidEntity columbid) {
             this.columbid = columbid;
@@ -1829,6 +1901,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
         @Override
         public void start() {
             this.chaseTicks = 40 + this.columbid.getRandom().nextInt(61);
+            this.repathTicks = 0;
             this.columbid.chaseCooldown = 700 + this.columbid.getRandom().nextInt(600);
             this.columbid.setBehaviorState(ColumbidBehaviorState.CHASING);
         }
@@ -1842,12 +1915,16 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                 this.chaseTicks = Math.min(this.chaseTicks, 12);
                 return;
             }
-            this.columbid.getNavigation().moveTo(this.target, 0.98D);
+            if (--this.repathTicks <= 0 || this.columbid.getNavigation().isDone()) {
+                this.repathTicks = 8 + this.columbid.getRandom().nextInt(8);
+                this.columbid.getNavigation().moveTo(this.target, 0.98D);
+            }
         }
 
         @Override
         public void stop() {
             this.target = null;
+            this.repathTicks = 0;
             if (this.columbid.getBehaviorState() == ColumbidBehaviorState.CHASING) {
                 this.columbid.setBehaviorState(ColumbidBehaviorState.IDLE);
             }

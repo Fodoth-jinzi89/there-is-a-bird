@@ -14,6 +14,9 @@ public final class GuaniaoCreativeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create((ResourceKey)Registries.CREATIVE_MODE_TAB, (String)"guaniao");
     public static final RegistryObject<CreativeModeTab> MAIN_TAB = CREATIVE_MODE_TABS.register("main", () -> CreativeModeTab.builder().title((Component)Component.translatable((String)"itemGroup.guaniao.main")).icon(() -> new ItemStack((ItemLike)GuaniaoItems.BIRD_GUIDE.get())).displayItems((parameters, output) -> {
         output.accept((ItemLike)GuaniaoItems.BIRD_GUIDE.get());
+        output.accept((ItemLike)GuaniaoItems.NIKON_D750.get());
+        output.accept((ItemLike)GuaniaoItems.FILM.get());
+        output.accept((ItemLike)GuaniaoItems.PHOTOGRAPH.get());
         output.accept((ItemLike)GuaniaoItems.BREADCRUMBS.get());
         output.accept((ItemLike)GuaniaoItems.SMALL_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.MEDIUM_BIRD_CAGE.get());

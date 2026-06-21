@@ -13,7 +13,13 @@ import net.minecraft.world.phys.Vec3;
 
 public class BirdBathUseGoal extends Goal {
     private static final int CLAIM_TICKS = 100;
-    private static final int CONSUME_WARMUP_TICKS = 8;
+    private static final int CONSUME_WARMUP_TICKS = 46;
+    private static final double TOP_HORIZONTAL_REACH_SQR = 0.85D * 0.85D;
+    private static final double TOP_MIN_FEET_Y_OFFSET = 1.18D;
+    private static final double TOP_MAX_FEET_Y_OFFSET = 1.95D;
+    private static final double TOP_MOUNT_RANGE_SQR = 2.15D * 2.15D;
+    private static final double TOP_SETTLE_HORIZONTAL_SQR = 0.95D * 0.95D;
+    private static final double TOP_SETTLE_MIN_FEET_Y_OFFSET = 0.92D;
     private final PathfinderMob bird;
     private final double speedModifier;
     private final double searchRadius;
@@ -26,8 +32,10 @@ public class BirdBathUseGoal extends Goal {
     private BirdBathBlockEntity targetBath;
     private int repathTicks;
     private int topUseTicks;
+    private int mountHopCooldown;
     private int totalTicks;
     private boolean consumed;
+    private boolean feedingAnimationStarted;
 
     public BirdBathUseGoal(PathfinderMob bird, double speedModifier, double searchRadius, int scanChance,
                            Predicate<BirdBathBlockEntity> bathPredicate, BooleanSupplier canStart,
@@ -85,10 +93,12 @@ public class BirdBathUseGoal extends Goal {
         this.consumed = false;
         this.repathTicks = 0;
         this.topUseTicks = 0;
+        this.mountHopCooldown = 0;
         this.totalTicks = 0;
+        this.feedingAnimationStarted = false;
         if (this.targetBath != null) {
             this.onApproach.accept(this.targetBath);
-            this.moveToBathEdge();
+            this.moveToBathTop();
         }
     }
 
@@ -98,19 +108,31 @@ public class BirdBathUseGoal extends Goal {
             return;
         }
         ++this.totalTicks;
+        if (this.mountHopCooldown > 0) {
+            --this.mountHopCooldown;
+        }
         Vec3 usePosition = BirdBathAttraction.topUsePosition(this.targetBath);
         this.bird.getLookControl().setLookAt(usePosition.x, usePosition.y, usePosition.z, 30.0F, 30.0F);
         if (this.isAtTopUsePosition(usePosition)) {
             this.bird.getNavigation().stop();
             ++this.topUseTicks;
+            this.startFeedingAnimationIfNeeded();
             if (this.topUseTicks >= CONSUME_WARMUP_TICKS) {
                 this.consumeFromBath();
             }
             return;
         }
         this.topUseTicks = 0;
+        this.feedingAnimationStarted = false;
+        Vec3 standPosition = BirdBathAttraction.topStandPosition(this.targetBath);
+        if (this.trySettleOntoTop(standPosition)) {
+            return;
+        }
+        if (this.tryHopOntoTop(standPosition)) {
+            return;
+        }
         if (--this.repathTicks <= 0 || this.bird.getNavigation().isDone()) {
-            this.moveToBathEdge();
+            this.moveToBathTop();
         }
         if (this.totalTicks % 35 == 0) {
             BirdBathAttraction.tryClaimUse(this.targetBath, this.bird, CLAIM_TICKS);
@@ -127,7 +149,9 @@ public class BirdBathUseGoal extends Goal {
         }
         this.targetBath = null;
         this.topUseTicks = 0;
+        this.mountHopCooldown = 0;
         this.totalTicks = 0;
+        this.feedingAnimationStarted = false;
         this.consumed = false;
     }
 
@@ -139,20 +163,81 @@ public class BirdBathUseGoal extends Goal {
         return this.bathPredicate.test(bath) && (!bath.isOccupied() || bath.isOccupiedBy(uuid));
     }
 
-    private void moveToBathEdge() {
+    private void moveToBathTop() {
         if (this.targetBath == null) {
             return;
         }
-        Vec3 approach = BirdBathAttraction.edgeApproachPosition(this.targetBath, this.bird.position());
-        this.bird.getNavigation().moveTo(approach.x, approach.y, approach.z, this.speedModifier);
+        Vec3 top = BirdBathAttraction.topStandPosition(this.targetBath);
+        this.bird.getNavigation().moveTo(top.x, top.y, top.z, this.speedModifier);
         this.repathTicks = 18 + this.bird.getRandom().nextInt(16);
     }
 
+    private boolean tryHopOntoTop(Vec3 standPosition) {
+        if (this.targetBath == null || this.mountHopCooldown > 0) {
+            return false;
+        }
+        Vec3 feet = this.bird.position();
+        double horizontalDistanceSqr = feet.subtract(standPosition).multiply(1.0D, 0.0D, 1.0D).lengthSqr();
+        double feetOffset = feet.y - this.targetBath.getBlockPos().getY();
+        if (feetOffset >= TOP_MIN_FEET_Y_OFFSET || horizontalDistanceSqr > TOP_MOUNT_RANGE_SQR) {
+            return false;
+        }
+        if (this.bird instanceof BirdBathMountable mountable && mountable.startBirdBathMountFlight(standPosition)) {
+            this.mountHopCooldown = 22;
+            return true;
+        }
+        Vec3 horizontal = standPosition.subtract(feet).multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() <= 1.0E-4D) {
+            horizontal = Vec3.ZERO;
+        } else {
+            horizontal = horizontal.normalize().scale(0.27D);
+        }
+        this.bird.getNavigation().stop();
+        this.bird.setDeltaMovement(horizontal.x, 0.66D, horizontal.z);
+        this.bird.fallDistance = 0.0F;
+        this.bird.hasImpulse = true;
+        this.mountHopCooldown = 20;
+        return true;
+    }
+
+    private boolean trySettleOntoTop(Vec3 standPosition) {
+        if (this.targetBath == null) {
+            return false;
+        }
+        Vec3 feet = this.bird.position();
+        double horizontalDistanceSqr = feet.subtract(standPosition).multiply(1.0D, 0.0D, 1.0D).lengthSqr();
+        double feetOffset = feet.y - this.targetBath.getBlockPos().getY();
+        if (horizontalDistanceSqr > TOP_SETTLE_HORIZONTAL_SQR
+                || feetOffset < TOP_SETTLE_MIN_FEET_Y_OFFSET
+                || feetOffset > TOP_MAX_FEET_Y_OFFSET) {
+            return false;
+        }
+        this.bird.getNavigation().stop();
+        this.bird.setPos(standPosition.x, standPosition.y, standPosition.z);
+        this.bird.setDeltaMovement(Vec3.ZERO);
+        this.bird.fallDistance = 0.0F;
+        this.bird.hasImpulse = true;
+        this.mountHopCooldown = 8;
+        return true;
+    }
+
     private boolean isAtTopUsePosition(Vec3 usePosition) {
-        Vec3 head = this.bird.getEyePosition();
-        double horizontalDistanceSqr = head.subtract(usePosition).multiply(1.0D, 0.0D, 1.0D).lengthSqr();
-        double verticalDistance = Math.abs(head.y - usePosition.y);
-        return horizontalDistanceSqr <= 3.1D && verticalDistance <= 1.9D;
+        Vec3 feet = this.bird.position();
+        double horizontalDistanceSqr = feet.subtract(usePosition).multiply(1.0D, 0.0D, 1.0D).lengthSqr();
+        double feetOffset = feet.y - this.targetBath.getBlockPos().getY();
+        return horizontalDistanceSqr <= TOP_HORIZONTAL_REACH_SQR
+                && feetOffset >= TOP_MIN_FEET_Y_OFFSET
+                && feetOffset <= TOP_MAX_FEET_Y_OFFSET;
+    }
+
+    private void startFeedingAnimationIfNeeded() {
+        if (this.feedingAnimationStarted || this.targetBath == null) {
+            return;
+        }
+        this.feedingAnimationStarted = true;
+        if (this.bird instanceof BirdBathFeedingAnimatable animatable) {
+            animatable.startBirdBathFeedingAnimation(this.targetBath.getContentType(), CONSUME_WARMUP_TICKS);
+        }
     }
 
     private void consumeFromBath() {

@@ -6,7 +6,9 @@ import EdDYON.guaniao.registry.GuaniaoCreativeTabs;
 import EdDYON.guaniao.registry.GuaniaoBlocks;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoItems;
+import EdDYON.guaniao.registry.GuaniaoRecipeSerializers;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
+import EdDYON.guaniao.network.GuaniaoNetwork;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -25,7 +27,9 @@ public class GuaniaoMod {
         GuaniaoBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
         GuaniaoItems.ITEMS.register(modEventBus);
         GuaniaoEntityTypes.ENTITY_TYPES.register(modEventBus);
+        GuaniaoRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
         GuaniaoSoundEvents.SOUND_EVENTS.register(modEventBus);
         GuaniaoCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        GuaniaoNetwork.register();
     }
 }

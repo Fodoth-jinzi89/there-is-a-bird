@@ -15,6 +15,8 @@ import EdDYON.guaniao.content.bird.scale.BirdModelScaleProfile;
 import EdDYON.guaniao.content.bird.scale.ScalableBirdModel;
 import EdDYON.guaniao.content.bath.BirdBathAttraction;
 import EdDYON.guaniao.content.bath.BirdBathContentType;
+import EdDYON.guaniao.content.bath.BirdBathFeedingAnimatable;
+import EdDYON.guaniao.content.bath.BirdBathMountable;
 import EdDYON.guaniao.content.bath.BirdBathUseGoal;
 import EdDYON.guaniao.content.bird.species.SparrowProfile;
 import EdDYON.guaniao.content.feed.BreadcrumbPileBlock;
@@ -88,7 +90,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware {
+public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(SparrowEntity.class, (EntityDataSerializer)EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(SparrowEntity.class, EntityDataSerializers.FLOAT);
     static final Ingredient TAMING_ITEMS = Ingredient.of((ItemLike[])new ItemLike[]{
@@ -455,6 +457,39 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
             return false;
         }
         return this.startControlledFlight(landingTarget, this.randomBetween(78, 122), SHORT_FLIGHT_SPEED + 0.05 + this.getRandom().nextDouble() * 0.04, false);
+    }
+
+    @Override
+    public boolean startBirdBathMountFlight(Vec3 standPosition) {
+        if (standPosition == null || this.isControlledFlightActive()) {
+            return false;
+        }
+        Vec3 horizontal = standPosition.subtract(this.position()).multiply(1.0D, 0.0D, 1.0D);
+        if (horizontal.lengthSqr() <= 1.0E-4D) {
+            horizontal = Vec3.ZERO;
+        } else {
+            horizontal = horizontal.normalize().scale(0.27D);
+        }
+        Vec3 movement = new Vec3(horizontal.x, 0.64D, horizontal.z);
+        this.getNavigation().stop();
+        this.setOnGround(false);
+        this.airborneFlightAnimationTicks = Math.max(this.airborneFlightAnimationTicks, 32);
+        this.setBehaviorStateFor(SparrowBehaviorState.SHORT_FLIGHT, 32);
+        this.setDeltaMovement(movement);
+        this.faceMovement(movement);
+        this.fallDistance = 0.0F;
+        this.hasImpulse = true;
+        return true;
+    }
+
+    @Override
+    public void startBirdBathFeedingAnimation(BirdBathContentType contentType, int ticks) {
+        this.getNavigation().stop();
+        if (contentType.isFood()) {
+            this.setBehaviorStateFor(SparrowBehaviorState.PECKING, Math.max(28, ticks));
+            return;
+        }
+        this.setBehaviorStateFor(SparrowBehaviorState.LOOK_AROUND, Math.max(24, ticks / 2));
     }
 
     public SparrowBehaviorState getBehaviorState() {

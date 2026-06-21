@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class BirdBathAttraction {
     private static final double TOP_USE_Y_OFFSET = 1.42D;
+    private static final double TOP_STAND_Y_OFFSET = 1.52D;
     private static final double EDGE_APPROACH_DISTANCE = 1.35D;
 
     private BirdBathAttraction() {
@@ -63,6 +64,11 @@ public final class BirdBathAttraction {
     public static Vec3 topUsePosition(BirdBathBlockEntity bath) {
         BlockPos pos = bath.getBlockPos();
         return new Vec3(pos.getX() + 0.5D, pos.getY() + TOP_USE_Y_OFFSET, pos.getZ() + 0.5D);
+    }
+
+    public static Vec3 topStandPosition(BirdBathBlockEntity bath) {
+        BlockPos pos = bath.getBlockPos();
+        return new Vec3(pos.getX() + 0.5D, pos.getY() + TOP_STAND_Y_OFFSET, pos.getZ() + 0.5D);
     }
 
     public static Vec3 edgeApproachPosition(BirdBathBlockEntity bath, Vec3 birdPosition) {
