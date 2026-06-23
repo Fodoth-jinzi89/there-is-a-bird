@@ -34,7 +34,9 @@ public class PhotographScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
-        int imageSize = PhotographData.IMAGE_SIZE;
+        int textureWidth = Math.max(1, PhotographData.width(this.photograph));
+        int textureHeight = Math.max(1, PhotographData.height(this.photograph));
+        int imageSize = Math.min(PhotographData.IMAGE_SIZE, Math.min(this.width - 48, this.height - 96));
         int x = (this.width - imageSize) / 2;
         int y = 36;
 
@@ -43,7 +45,7 @@ public class PhotographScreen extends Screen {
         graphics.fill(x - 4, y - 4, x + imageSize + 4, y + imageSize + 4, 0xFF2A2A2A);
 
         ResourceLocation texture = PhotographTextureCache.textureFor(this.photograph);
-        graphics.blit(texture, x, y, 0, 0, imageSize, imageSize, PhotographData.IMAGE_SIZE, PhotographData.IMAGE_SIZE);
+        graphics.blit(texture, x, y, 0, 0, imageSize, imageSize, textureWidth, textureHeight);
 
         String photographer = PhotographData.photographer(this.photograph);
         if (!photographer.isEmpty()) {

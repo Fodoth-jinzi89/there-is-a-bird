@@ -18,6 +18,10 @@ public final class GuaniaoCreativeTabs {
         output.accept((ItemLike)GuaniaoItems.FILM.get());
         output.accept((ItemLike)GuaniaoItems.PHOTOGRAPH.get());
         output.accept((ItemLike)GuaniaoItems.BREADCRUMBS.get());
+        output.accept((ItemLike)GuaniaoItems.BIRD_DROPPING_1.get());
+        output.accept((ItemLike)GuaniaoItems.BIRD_DROPPING_2.get());
+        output.accept((ItemLike)GuaniaoItems.BIRD_DROPPING_3.get());
+        output.accept((ItemLike)GuaniaoItems.BIRD_DROPPING_4.get());
         output.accept((ItemLike)GuaniaoItems.SMALL_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.MEDIUM_BIRD_CAGE.get());
         output.accept((ItemLike)GuaniaoItems.LARGE_BIRD_CAGE.get());

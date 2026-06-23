@@ -3,6 +3,8 @@ package EdDYON.guaniao.client;
 import EdDYON.guaniao.client.bath.BirdBathRenderer;
 import EdDYON.guaniao.client.camera.PhotographEntityRenderer;
 import EdDYON.guaniao.client.cage.BirdCageRenderer;
+import EdDYON.guaniao.client.dropping.BirdDroppingProjectileRenderer;
+import EdDYON.guaniao.client.dropping.BirdDroppingSplatRenderer;
 import EdDYON.guaniao.client.entity.budgerigar.BudgerigarRenderer;
 import EdDYON.guaniao.client.entity.columbid.PigeonRenderer;
 import EdDYON.guaniao.client.entity.columbid.SpottedDoveRenderer;
@@ -33,6 +35,8 @@ public final class ClientModEvents {
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PIGEON.get(), PigeonRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PHOTOGRAPH.get(), PhotographEntityRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BIRD_DROPPING_PROJECTILE.get(), BirdDroppingProjectileRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BIRD_DROPPING_SPLAT.get(), BirdDroppingSplatRenderer::new);
         event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_CAGE.get(), BirdCageRenderer::new);
         event.registerBlockEntityRenderer(GuaniaoBlockEntityTypes.BIRD_BATH.get(), BirdBathRenderer::new);
     }
@@ -40,5 +44,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(GuaniaoBlocks.BREADCRUMBS.get(), RenderType.cutout()));
+        event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(GuaniaoBlocks.BIRD_DROPPING_STAIN_LIGHT.get(), RenderType.cutout()));
+        event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(GuaniaoBlocks.BIRD_DROPPING_STAIN_DARK.get(), RenderType.cutout()));
     }
 }

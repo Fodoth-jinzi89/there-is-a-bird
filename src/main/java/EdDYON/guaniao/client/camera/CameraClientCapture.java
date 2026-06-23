@@ -24,6 +24,7 @@ public final class CameraClientCapture {
     private static final double DEFAULT_FOCAL_LENGTH = 50.0D;
     private static final double FOCAL_LENGTH_SCROLL_STEP = 4.0D;
     private static final double FULL_FRAME_SENSOR_WIDTH = 36.0D;
+    private static final double MIN_VIEWFINDER_SENSITIVITY_SCALE = 0.28D;
 
     private static boolean viewfinderOpen;
     private static InteractionHand viewfinderHand = InteractionHand.MAIN_HAND;
@@ -35,6 +36,8 @@ public final class CameraClientCapture {
     private static double pendingCaptureFov = focalLengthToFov(DEFAULT_FOCAL_LENGTH);
     private static boolean storedHideGui;
     private static CameraType storedCameraType = CameraType.FIRST_PERSON;
+    private static boolean sensitivityAdjusted;
+    private static double storedSensitivity;
 
     private CameraClientCapture() {
     }
@@ -52,6 +55,8 @@ public final class CameraClientCapture {
 
         viewfinderHand = hand;
         focalLength = Mth.clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
+        beginSensitivityAdjustment(minecraft);
+        applyFocalSensitivity(minecraft);
         viewfinderOpen = true;
         minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.35F, 1.5F);
     }
@@ -66,6 +71,7 @@ public final class CameraClientCapture {
 
     public static void closeViewfinder() {
         viewfinderOpen = false;
+        restoreSensitivity(Minecraft.getInstance());
     }
 
     public static void tickViewfinder() {
@@ -91,6 +97,7 @@ public final class CameraClientCapture {
         if (Math.abs(next - focalLength) > 0.001D) {
             focalLength = next;
             Minecraft minecraft = Minecraft.getInstance();
+            applyFocalSensitivity(minecraft);
             if (minecraft.player != null) {
                 minecraft.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.18F, delta > 0.0D ? 1.65F : 1.1F);
             }
@@ -179,14 +186,46 @@ public final class CameraClientCapture {
         int[] pixels = new int[size * size];
 
         for (int y = 0; y < size; y++) {
-            int sourceY = offsetY + y * sourceSize / size;
+            int startY = offsetY + y * sourceSize / size;
+            int endY = offsetY + Math.max(startY - offsetY + 1, (y + 1) * sourceSize / size);
+            endY = Math.min(offsetY + sourceSize, Math.max(startY + 1, endY));
             for (int x = 0; x < size; x++) {
-                int sourceX = offsetX + x * sourceSize / size;
-                pixels[y * size + x] = image.getPixelRGBA(sourceX, sourceY);
+                int startX = offsetX + x * sourceSize / size;
+                int endX = offsetX + Math.max(startX - offsetX + 1, (x + 1) * sourceSize / size);
+                endX = Math.min(offsetX + sourceSize, Math.max(startX + 1, endX));
+                pixels[y * size + x] = averagePixels(image, startX, startY, endX, endY);
             }
         }
 
         return pixels;
+    }
+
+    private static int averagePixels(NativeImage image, int startX, int startY, int endX, int endY) {
+        long a = 0L;
+        long b = 0L;
+        long g = 0L;
+        long r = 0L;
+        int count = 0;
+
+        for (int y = startY; y < endY; y++) {
+            for (int x = startX; x < endX; x++) {
+                int pixel = image.getPixelRGBA(x, y);
+                a += pixel >>> 24 & 255;
+                b += pixel >>> 16 & 255;
+                g += pixel >>> 8 & 255;
+                r += pixel & 255;
+                count++;
+            }
+        }
+
+        if (count <= 0) {
+            return image.getPixelRGBA(startX, startY);
+        }
+
+        return ((int)(a / count) << 24)
+                | ((int)(b / count) << 16)
+                | ((int)(g / count) << 8)
+                | (int)(r / count);
     }
 
     private static String safeId(String name) {
@@ -201,6 +240,7 @@ public final class CameraClientCapture {
         }
 
         viewfinderOpen = false;
+        restoreSensitivity(minecraft);
         cleanCapturePending = true;
         cleanCaptureDelayFrames = CLEAN_CAPTURE_DELAY_FRAMES;
         pendingCaptureHand = hand;
@@ -218,6 +258,7 @@ public final class CameraClientCapture {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.options.hideGui = storedHideGui;
         minecraft.options.setCameraType(storedCameraType);
+        restoreSensitivity(minecraft);
         cleanCapturePending = false;
     }
 
@@ -236,5 +277,33 @@ public final class CameraClientCapture {
     private static double focalLengthToFov(double focalLength) {
         double fov = Math.toDegrees(2.0D * Math.atan(FULL_FRAME_SENSOR_WIDTH / (2.0D * focalLength)));
         return Mth.clamp(fov, 14.0D, 92.0D);
+    }
+
+    private static void beginSensitivityAdjustment(Minecraft minecraft) {
+        if (!sensitivityAdjusted) {
+            storedSensitivity = minecraft.options.sensitivity().get();
+            sensitivityAdjusted = true;
+        }
+    }
+
+    private static void applyFocalSensitivity(Minecraft minecraft) {
+        if (!sensitivityAdjusted) {
+            return;
+        }
+        minecraft.options.sensitivity().set(storedSensitivity * focalSensitivityScale());
+    }
+
+    private static void restoreSensitivity(Minecraft minecraft) {
+        if (!sensitivityAdjusted) {
+            return;
+        }
+        minecraft.options.sensitivity().set(storedSensitivity);
+        sensitivityAdjusted = false;
+    }
+
+    private static double focalSensitivityScale() {
+        double normalized = Mth.clamp((focalLength - MIN_FOCAL_LENGTH) / (MAX_FOCAL_LENGTH - MIN_FOCAL_LENGTH), 0.0D, 1.0D);
+        double smooth = normalized * normalized * (3.0D - 2.0D * normalized);
+        return Mth.lerp(smooth, 1.0D, MIN_VIEWFINDER_SENSITIVITY_SCALE);
     }
 }

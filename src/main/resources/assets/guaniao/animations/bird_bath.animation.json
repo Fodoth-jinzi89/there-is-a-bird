@@ -1,7 +1,7 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"水1": {
+		"water_1": {
 			"loop": true,
 			"bones": {
 				"water_middle": {
@@ -26,7 +26,7 @@
 				}
 			}
 		},
-		"水2": {
+		"water_2": {
 			"loop": true,
 			"bones": {
 				"water_up": {
@@ -51,7 +51,7 @@
 				}
 			}
 		},
-		"水3": {
+		"water_3": {
 			"loop": true,
 			"bones": {
 				"water_up": {

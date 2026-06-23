@@ -29,13 +29,15 @@ public final class PhotographTextureCache {
             }
 
             int[] pixels = PhotographData.pixels(stack);
-            if (pixels.length != PhotographData.IMAGE_SIZE * PhotographData.IMAGE_SIZE) {
+            int width = PhotographData.width(stack);
+            int height = PhotographData.height(stack);
+            if (width <= 0 || height <= 0 || pixels.length != width * height) {
                 return FALLBACK;
             }
 
-            String key = safe(PhotographData.id(stack)) + "_" + Integer.toUnsignedString(Arrays.hashCode(pixels));
+            String key = safe(PhotographData.id(stack)) + "_" + width + "x" + height + "_" + Integer.toUnsignedString(Arrays.hashCode(pixels));
             return TEXTURES.computeIfAbsent(key, ignored -> {
-                NativeImage image = toNativeImage(pixels);
+                NativeImage image = toNativeImage(pixels, width, height);
                 DynamicTexture texture = new DynamicTexture(image);
                 texture.upload();
                 return Minecraft.getInstance().getTextureManager().register("guaniao_photo/" + key, texture);
@@ -53,17 +55,17 @@ public final class PhotographTextureCache {
         Path directory = Minecraft.getInstance().gameDirectory.toPath().resolve("guaniao_photos");
         Files.createDirectories(directory);
         Path file = directory.resolve(safe(PhotographData.id(stack)) + ".png");
-        try (NativeImage image = toNativeImage(PhotographData.pixels(stack))) {
+        try (NativeImage image = toNativeImage(PhotographData.pixels(stack), PhotographData.width(stack), PhotographData.height(stack))) {
             image.writeToFile(file);
         }
         return file;
     }
 
-    private static NativeImage toNativeImage(int[] pixels) {
-        NativeImage image = new NativeImage(PhotographData.IMAGE_SIZE, PhotographData.IMAGE_SIZE, false);
-        for (int y = 0; y < PhotographData.IMAGE_SIZE; y++) {
-            for (int x = 0; x < PhotographData.IMAGE_SIZE; x++) {
-                image.setPixelRGBA(x, y, pixels[y * PhotographData.IMAGE_SIZE + x]);
+    private static NativeImage toNativeImage(int[] pixels, int width, int height) {
+        NativeImage image = new NativeImage(width, height, false);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                image.setPixelRGBA(x, y, pixels[y * width + x]);
             }
         }
         return image;

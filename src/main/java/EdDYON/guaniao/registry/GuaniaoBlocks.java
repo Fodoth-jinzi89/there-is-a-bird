@@ -2,6 +2,7 @@ package EdDYON.guaniao.registry;
 
 import EdDYON.guaniao.content.bath.BirdBathBlock;
 import EdDYON.guaniao.content.bath.BirdBathVariant;
+import EdDYON.guaniao.content.dropping.BirdDroppingStainBlock;
 import EdDYON.guaniao.content.feed.BreadcrumbPileBlock;
 import EdDYON.guaniao.content.cage.BirdCageBlock;
 import EdDYON.guaniao.content.cage.BirdCageVariant;
@@ -29,6 +30,18 @@ public final class GuaniaoBlocks {
     public static final RegistryObject<Block> WOODEN_BIRD_BATH_2 = registerBirdBath(BirdBathVariant.WOODEN_BIRD_BATH_2);
     public static final RegistryObject<Block> STONE_BIRD_BATH_2 = registerBirdBath(BirdBathVariant.STONE_BIRD_BATH_2);
     public static final RegistryObject<Block> BIRD_BATH_2 = registerBirdBath(BirdBathVariant.BIRD_BATH_2);
+    public static final RegistryObject<Block> BIRD_DROPPING_STAIN_LIGHT = BLOCKS.register("bird_dropping_stain_light", () ->
+            new BirdDroppingStainBlock(BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .instabreak()
+                    .sound(SoundType.SLIME_BLOCK)
+                    .noOcclusion()));
+    public static final RegistryObject<Block> BIRD_DROPPING_STAIN_DARK = BLOCKS.register("bird_dropping_stain_dark", () ->
+            new BirdDroppingStainBlock(BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .instabreak()
+                    .sound(SoundType.SLIME_BLOCK)
+                    .noOcclusion()));
 
     private GuaniaoBlocks() {
     }

@@ -10,6 +10,8 @@ import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowDefinition;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
 import EdDYON.guaniao.content.camera.PhotographEntity;
+import EdDYON.guaniao.content.dropping.BirdDroppingProjectileEntity;
+import EdDYON.guaniao.content.dropping.BirdDroppingSplatEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -32,6 +34,18 @@ public final class GuaniaoEntityTypes {
                     .clientTrackingRange(10)
                     .updateInterval(Integer.MAX_VALUE)
                     .build(new ResourceLocation("guaniao", "photograph").toString()));
+    public static final RegistryObject<EntityType<BirdDroppingProjectileEntity>> BIRD_DROPPING_PROJECTILE = ENTITY_TYPES.register("bird_dropping_projectile", () ->
+            EntityType.Builder.<BirdDroppingProjectileEntity>of(BirdDroppingProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25F, 0.25F)
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build(new ResourceLocation("guaniao", "bird_dropping_projectile").toString()));
+    public static final RegistryObject<EntityType<BirdDroppingSplatEntity>> BIRD_DROPPING_SPLAT = ENTITY_TYPES.register("bird_dropping_splat", () ->
+            EntityType.Builder.<BirdDroppingSplatEntity>of(BirdDroppingSplatEntity::new, MobCategory.MISC)
+                    .sized(0.45F, 0.12F)
+                    .clientTrackingRange(8)
+                    .updateInterval(2)
+                    .build(new ResourceLocation("guaniao", "bird_dropping_splat").toString()));
 
     private GuaniaoEntityTypes() {
     }
