@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PotionItem;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.LinkedHashMap;
@@ -23,9 +24,10 @@ public final class PrankFoodUtil {
     private static final Map<String, String> EN_REPLACEMENTS = new LinkedHashMap<>();
 
     static {
-        ZH_PHRASE_REPLACEMENTS.put("\u9644\u9B54\u91D1\u82F9\u679C", "\u9644\u9B54\u5168\u82F9\u545C");
-        ZH_PHRASE_REPLACEMENTS.put("\u91D1\u82F9\u679C", "\u5168\u82F9\u545C");
-        ZH_PHRASE_REPLACEMENTS.put("\u5357\u74DC\u6D3E", "\u5357\u722A\u6CE5\u6D3E");
+        ZH_PHRASE_REPLACEMENTS.put("\u9644\u9B54\u91D1\u82F9\u679C", "\u9644\u9B54\u5168\u82F9\u679C");
+        ZH_PHRASE_REPLACEMENTS.put("\u91D1\u82F9\u679C", "\u5168\u82F9\u679C");
+        ZH_PHRASE_REPLACEMENTS.put("\u5357\u74DC\u6D3E", "\u5357\u722A\u6D3E");
+        ZH_PHRASE_REPLACEMENTS.put("\u836F\u6C34", "\u7EA6\u6C34");
 
         ZH_CORE_REPLACEMENTS.put('\u8089', '\u5185');
         ZH_CORE_REPLACEMENTS.put('\u9E21', '\u53FD');
@@ -43,6 +45,11 @@ public final class PrankFoodUtil {
         ZH_CORE_REPLACEMENTS.put('\u679C', '\u545C');
         ZH_CORE_REPLACEMENTS.put('\u74DC', '\u722A');
         ZH_CORE_REPLACEMENTS.put('\u85AF', '\u6691');
+        ZH_CORE_REPLACEMENTS.put('\u836F', '\u7EA6');
+        ZH_CORE_REPLACEMENTS.put('\u6C34', '\u51B0');
+        ZH_CORE_REPLACEMENTS.put('\u83C7', '\u59D1');
+        ZH_CORE_REPLACEMENTS.put('\u7172', '\u5305');
+        ZH_CORE_REPLACEMENTS.put('\u76D0', '\u76EF');
 
         ZH_MODIFIER_REPLACEMENTS.put('\u719F', '\u5B70');
         ZH_MODIFIER_REPLACEMENTS.put('\u70E4', '\u62F7');
@@ -52,30 +59,54 @@ public final class PrankFoodUtil {
         ZH_MODIFIER_REPLACEMENTS.put('\u871C', '\u5BC6');
         ZH_MODIFIER_REPLACEMENTS.put('\u6C64', '\u70EB');
         ZH_MODIFIER_REPLACEMENTS.put('\u6839', '\u8DCB');
+        ZH_MODIFIER_REPLACEMENTS.put('\u6E85', '\u6D45');
+        ZH_MODIFIER_REPLACEMENTS.put('\u6EDE', '\u6C41');
 
-        EN_REPLACEMENTS.put("Cooked Beef", "Cooked Beaf");
-        EN_REPLACEMENTS.put("Beef", "Beaf");
-        EN_REPLACEMENTS.put("Cooked Porkchop", "Cooked Porkslop");
-        EN_REPLACEMENTS.put("Porkchop", "Porkslop");
-        EN_REPLACEMENTS.put("Cooked Chicken", "Cooked Chickin");
-        EN_REPLACEMENTS.put("Chicken", "Chickin");
-        EN_REPLACEMENTS.put("Cooked Mutton", "Cooked Muton");
-        EN_REPLACEMENTS.put("Mutton", "Muton");
-        EN_REPLACEMENTS.put("Cooked Rabbit", "Cooked Rabbut");
-        EN_REPLACEMENTS.put("Rabbit Stew", "Rabbut Stew");
-        EN_REPLACEMENTS.put("Rabbit", "Rabbut");
-        EN_REPLACEMENTS.put("Bread", "Bred");
+        EN_REPLACEMENTS.put("Enchanted Golden Apple", "Enchanted Golden Appie");
+        EN_REPLACEMENTS.put("Cooked Porkchop", "Cooked Porkchob");
+        EN_REPLACEMENTS.put("Poisonous Potato", "Poisonous Pototo");
+        EN_REPLACEMENTS.put("Suspicious Stew", "Suspicious Staw");
+        EN_REPLACEMENTS.put("Lingering Potion", "Lingering Lotion");
+        EN_REPLACEMENTS.put("Cooked Chicken", "Cooked Chacken");
+        EN_REPLACEMENTS.put("Cooked Rabbit", "Cooked Rabbot");
+        EN_REPLACEMENTS.put("Cooked Salmon", "Cooked Salmom");
+        EN_REPLACEMENTS.put("Beetroot Soup", "Beetroot Soop");
+        EN_REPLACEMENTS.put("Mushroom Stew", "Mushroom Staw");
+        EN_REPLACEMENTS.put("Rabbit Stew", "Rabbit Staw");
+        EN_REPLACEMENTS.put("Golden Carrot", "Golden Parrot");
+        EN_REPLACEMENTS.put("Golden Apple", "Golden Appie");
+        EN_REPLACEMENTS.put("Baked Potato", "Baked Pototo");
+        EN_REPLACEMENTS.put("Splash Potion", "Splash Lotion");
+        EN_REPLACEMENTS.put("Cooked Mutton", "Cooked Mutten");
+        EN_REPLACEMENTS.put("Cooked Beef", "Cooked Beeg");
+        EN_REPLACEMENTS.put("Cooked Cod", "Cooked Cot");
+        EN_REPLACEMENTS.put("Chorus Fruit", "Chorus Fruut");
+        EN_REPLACEMENTS.put("Tropical Fish", "Tropical Fosh");
+        EN_REPLACEMENTS.put("Sweet Berries", "Sweet Berriez");
+        EN_REPLACEMENTS.put("Glow Berries", "Glow Berriez");
+        EN_REPLACEMENTS.put("Melon Slice", "Melon Slicf");
+        EN_REPLACEMENTS.put("Honey Bottle", "Honey Bottie");
+        EN_REPLACEMENTS.put("Milk Bucket", "Milk Backet");
+        EN_REPLACEMENTS.put("Rotten Flesh", "Rotten Flesk");
+        EN_REPLACEMENTS.put("Spider Eye", "Spider Bye");
+        EN_REPLACEMENTS.put("Pumpkin Pie", "Pumpkin Pue");
+        EN_REPLACEMENTS.put("Dried Kelp", "Dried Help");
+        EN_REPLACEMENTS.put("Pufferfish", "Pufferfosh");
+        EN_REPLACEMENTS.put("Beetroot", "Beetroof");
+        EN_REPLACEMENTS.put("Porkchop", "Porkchob");
+        EN_REPLACEMENTS.put("Chicken", "Chacken");
+        EN_REPLACEMENTS.put("Mutton", "Mutten");
+        EN_REPLACEMENTS.put("Rabbit", "Rabbot");
+        EN_REPLACEMENTS.put("Salmon", "Salmom");
+        EN_REPLACEMENTS.put("Carrot", "Parrot");
+        EN_REPLACEMENTS.put("Potato", "Pototo");
         EN_REPLACEMENTS.put("Cookie", "Cookle");
-        EN_REPLACEMENTS.put("Cake", "Cacke");
-        EN_REPLACEMENTS.put("Pumpkin Pie", "Pumpkin Poo");
-        EN_REPLACEMENTS.put("Enchanted Golden Apple", "Enchanted Golden Appel");
-        EN_REPLACEMENTS.put("Golden Apple", "Golden Appel");
-        EN_REPLACEMENTS.put("Apple", "Appel");
-        EN_REPLACEMENTS.put("Beetroot Soup", "Beetrot Soup");
-        EN_REPLACEMENTS.put("Beetroot", "Beetrot");
-        EN_REPLACEMENTS.put("Sweet Berries", "Sweet Berris");
-        EN_REPLACEMENTS.put("Glow Berries", "Glow Berris");
-        EN_REPLACEMENTS.put("Rotten Flesh", "Rotten Flesch");
+        EN_REPLACEMENTS.put("Potion", "Lotion");
+        EN_REPLACEMENTS.put("Apple", "Appie");
+        EN_REPLACEMENTS.put("Bread", "Breod");
+        EN_REPLACEMENTS.put("Cake", "Coke");
+        EN_REPLACEMENTS.put("Beef", "Beeg");
+        EN_REPLACEMENTS.put("Cod", "Cot");
     }
 
     private PrankFoodUtil() {
@@ -112,7 +143,7 @@ public final class PrankFoodUtil {
     }
 
     public static boolean isEligibleFood(ItemStack stack) {
-        return !stack.isEmpty() && stack.isEdible() && !isPrankFood(stack) && !isDropping(stack);
+        return !stack.isEmpty() && (stack.isEdible() || stack.getItem() instanceof PotionItem) && !isPrankFood(stack) && !isDropping(stack);
     }
 
     public static ItemStack makePrankFood(ItemStack food, ItemStack dropping) {
@@ -152,53 +183,111 @@ public final class PrankFoodUtil {
     private static String corruptChineseName(String name) {
         for (Map.Entry<String, String> entry : ZH_PHRASE_REPLACEMENTS.entrySet()) {
             if (name.contains(entry.getKey())) {
-                return name.replace(entry.getKey(), entry.getValue());
+                return replaceFirstLiteral(name, entry.getKey(), entry.getValue());
             }
         }
 
-        int limit = replacementLimit(name.length());
         StringBuilder builder = new StringBuilder(name);
-        int replaced = replaceChineseChars(builder, ZH_CORE_REPLACEMENTS, limit, 0);
-        replaced = replaceChineseChars(builder, ZH_MODIFIER_REPLACEMENTS, limit, replaced);
-        if (replaced > 0) {
+        if (replaceChineseChar(builder, ZH_CORE_REPLACEMENTS) || replaceChineseChar(builder, ZH_MODIFIER_REPLACEMENTS)) {
             return builder.toString();
         }
 
-        if (name.length() >= 4) {
-            int left = Math.max(1, name.length() / 2 - 1);
-            int right = left + 1;
-            char leftChar = builder.charAt(left);
-            builder.setCharAt(left, builder.charAt(right));
-            builder.setCharAt(right, leftChar);
-            return builder.toString();
-        }
-        return name + "\uFF1F";
-    }
-
-    private static int replaceChineseChars(StringBuilder builder, Map<Character, Character> replacements, int limit, int replaced) {
-        for (int i = 0; i < builder.length() && replaced < limit; i++) {
-            Character replacement = replacements.get(builder.charAt(i));
-            if (replacement != null) {
-                builder.setCharAt(i, replacement);
-                replaced++;
+        for (int i = 0; i < builder.length(); i++) {
+            if (!Character.isWhitespace(builder.charAt(i))) {
+                builder.setCharAt(i, '\uFF1F');
+                return builder.toString();
             }
         }
-        return replaced;
+        return name;
     }
 
-    private static int replacementLimit(int length) {
-        if (length <= 2) {
-            return 1;
+    private static boolean replaceChineseChar(StringBuilder builder, Map<Character, Character> replacements) {
+        for (int i = 0; i < builder.length(); i++) {
+            Character replacement = replacements.get(builder.charAt(i));
+            if (replacement != null && replacement != builder.charAt(i)) {
+                builder.setCharAt(i, replacement);
+                return true;
+            }
         }
-        if (length <= 4) {
-            return 2;
-        }
-        return 3;
+        return false;
     }
 
     private static String corruptEnglishName(String name) {
-        String replacement = EN_REPLACEMENTS.get(name);
-        return replacement == null ? name + "?" : replacement;
+        String exactReplacement = EN_REPLACEMENTS.get(name);
+        if (isSingleCharacterReplacement(name, exactReplacement)) {
+            return exactReplacement;
+        }
+
+        for (Map.Entry<String, String> entry : EN_REPLACEMENTS.entrySet()) {
+            String source = entry.getKey();
+            String replacement = entry.getValue();
+            int index = name.indexOf(source);
+            if (index >= 0 && isSingleCharacterReplacement(source, replacement)) {
+                return name.substring(0, index) + replacement + name.substring(index + source.length());
+            }
+        }
+
+        StringBuilder builder = new StringBuilder(name);
+        for (int i = 0; i < builder.length(); i++) {
+            char replacement = latinFallback(builder.charAt(i));
+            if (replacement != builder.charAt(i)) {
+                builder.setCharAt(i, replacement);
+                return builder.toString();
+            }
+        }
+        return name;
+    }
+
+    private static boolean isSingleCharacterReplacement(String source, String replacement) {
+        if (source == null || replacement == null || source.length() != replacement.length()) {
+            return false;
+        }
+
+        int differences = 0;
+        for (int i = 0; i < source.length(); i++) {
+            if (source.charAt(i) != replacement.charAt(i)) {
+                differences++;
+                if (differences > 1) {
+                    return false;
+                }
+            }
+        }
+        return differences == 1;
+    }
+
+    private static char latinFallback(char character) {
+        return switch (character) {
+            case 'a' -> 'o';
+            case 'e' -> 'a';
+            case 'i' -> 'e';
+            case 'o' -> 'u';
+            case 'u' -> 'o';
+            case 'A' -> 'O';
+            case 'E' -> 'A';
+            case 'I' -> 'E';
+            case 'O' -> 'U';
+            case 'U' -> 'O';
+            default -> {
+                if (character >= 'b' && character <= 'z') {
+                    yield (char)(character - 1);
+                }
+                if (character >= 'B' && character <= 'Z') {
+                    yield (char)(character - 1);
+                }
+                yield character;
+            }
+        };
+    }
+
+    private static String replaceFirstLiteral(String name, String source, String replacement) {
+        if (!isSingleCharacterReplacement(source, replacement)) {
+            return name;
+        }
+        int index = name.indexOf(source);
+        if (index < 0) {
+            return name;
+        }
+        return name.substring(0, index) + replacement + name.substring(index + source.length());
     }
 
     private static boolean containsChinese(String value) {

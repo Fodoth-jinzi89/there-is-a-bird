@@ -57,6 +57,14 @@ public final class BirdBathAttraction {
         return bath != null && (bath.hasFoodForBird(BirdBathFoodPreference.BREAD) || bath.hasUsableWater());
     }
 
+    public static boolean isAttractiveToCrow(BirdBathBlockEntity bath) {
+        return bath != null
+                && (bath.hasFoodForBird(BirdBathFoodPreference.FISH)
+                || bath.hasFoodForBird(BirdBathFoodPreference.MEAT)
+                || bath.hasFoodForBird(BirdBathFoodPreference.BREAD)
+                || bath.hasUsableWater());
+    }
+
     public static boolean isAttractiveToWaterBird(BirdBathBlockEntity bath) {
         return bath != null && bath.hasUsableWater();
     }
@@ -104,6 +112,9 @@ public final class BirdBathAttraction {
             return 4;
         }
         if (key.contains("pigeon") || key.contains("dove") || key.contains("collared")) {
+            return 3;
+        }
+        if (key.contains("crow")) {
             return 3;
         }
         if (key.contains("budgerigar") || key.contains("parakeet")) {

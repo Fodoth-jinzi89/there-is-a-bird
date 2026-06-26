@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#guaniao:crow_habitat",
+  "spawners": {
+    "type": "guaniao:crow",
+    "weight": 9,
+    "minCount": 1,
+    "maxCount": 3
+  }
+}

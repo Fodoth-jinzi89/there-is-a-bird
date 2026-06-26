@@ -3,8 +3,10 @@ package EdDYON.guaniao.event;
 import EdDYON.guaniao.content.bird.budgerigar.BudgerigarEntity;
 import EdDYON.guaniao.content.bird.columbid.PigeonEntity;
 import EdDYON.guaniao.content.bird.columbid.SpottedDoveEntity;
+import EdDYON.guaniao.content.bird.crow.CrowEntity;
 import EdDYON.guaniao.content.bird.nightheron.NightHeronEntity;
 import EdDYON.guaniao.content.bird.sparrow.SparrowEntity;
+import EdDYON.guaniao.content.dropping.BirdDroppingUtil;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import EdDYON.guaniao.registry.GuaniaoItems;
 import net.minecraft.world.entity.EntityType;
@@ -17,10 +19,16 @@ import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
 @Mod.EventBusSubscriber(modid="guaniao", bus=Mod.EventBusSubscriber.Bus.MOD)
 public final class GuaniaoModEvents {
     private GuaniaoModEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(BirdDroppingUtil::registerCompostables);
     }
 
     @SubscribeEvent
@@ -30,6 +38,7 @@ public final class GuaniaoModEvents {
         event.put((EntityType)GuaniaoEntityTypes.BUDGERIGAR.get(), BudgerigarEntity.createAttributes().build());
         event.put((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveEntity.createAttributes().build());
         event.put((EntityType)GuaniaoEntityTypes.PIGEON.get(), PigeonEntity.createAttributes().build());
+        event.put((EntityType)GuaniaoEntityTypes.CROW.get(), CrowEntity.createAttributes().build());
     }
 
     @SubscribeEvent
@@ -39,6 +48,7 @@ public final class GuaniaoModEvents {
         event.register((EntityType)GuaniaoEntityTypes.BUDGERIGAR.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, BudgerigarEntity::canSpawn, SpawnPlacementRegisterEvent.Operation.REPLACE);
         event.register((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, SpottedDoveEntity::canSpawn, SpawnPlacementRegisterEvent.Operation.REPLACE);
         event.register((EntityType)GuaniaoEntityTypes.PIGEON.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, PigeonEntity::canSpawn, SpawnPlacementRegisterEvent.Operation.REPLACE);
+        event.register((EntityType)GuaniaoEntityTypes.CROW.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, CrowEntity::canSpawn, SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 
     @SubscribeEvent
@@ -49,6 +59,7 @@ public final class GuaniaoModEvents {
             event.accept((ItemLike)GuaniaoItems.BUDGERIGAR_SPAWN_EGG.get());
             event.accept((ItemLike)GuaniaoItems.SPOTTED_DOVE_SPAWN_EGG.get());
             event.accept((ItemLike)GuaniaoItems.PIGEON_SPAWN_EGG.get());
+            event.accept((ItemLike)GuaniaoItems.CROW_SPAWN_EGG.get());
         }
     }
 }

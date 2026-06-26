@@ -5,6 +5,7 @@ public final class BirdModelScaleProfile {
     public static final BirdModelScaleProfile SPARROW = new BirdModelScaleProfile(1.0F, 0.86F, 1.14F);
     public static final BirdModelScaleProfile BUDGERIGAR = new BirdModelScaleProfile(0.6F, 0.84F, 1.16F);
     public static final BirdModelScaleProfile COLUMBID = new BirdModelScaleProfile(1.0F, 0.90F, 1.10F);
+    public static final BirdModelScaleProfile CROW = new BirdModelScaleProfile(1.0F, 0.88F, 1.12F);
 
     private final float baseRenderScale;
     private final float minIndividualScale;

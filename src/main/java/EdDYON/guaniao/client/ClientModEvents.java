@@ -8,6 +8,7 @@ import EdDYON.guaniao.client.dropping.BirdDroppingSplatRenderer;
 import EdDYON.guaniao.client.entity.budgerigar.BudgerigarRenderer;
 import EdDYON.guaniao.client.entity.columbid.PigeonRenderer;
 import EdDYON.guaniao.client.entity.columbid.SpottedDoveRenderer;
+import EdDYON.guaniao.client.entity.crow.CrowRenderer;
 import EdDYON.guaniao.client.entity.nightheron.NightHeronRenderer;
 import EdDYON.guaniao.client.entity.sparrow.SparrowRenderer;
 import EdDYON.guaniao.registry.GuaniaoBlockEntityTypes;
@@ -34,6 +35,7 @@ public final class ClientModEvents {
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BUDGERIGAR.get(), BudgerigarRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.SPOTTED_DOVE.get(), SpottedDoveRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PIGEON.get(), PigeonRenderer::new);
+        event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.CROW.get(), CrowRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.PHOTOGRAPH.get(), PhotographEntityRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BIRD_DROPPING_PROJECTILE.get(), BirdDroppingProjectileRenderer::new);
         event.registerEntityRenderer((EntityType)GuaniaoEntityTypes.BIRD_DROPPING_SPLAT.get(), BirdDroppingSplatRenderer::new);

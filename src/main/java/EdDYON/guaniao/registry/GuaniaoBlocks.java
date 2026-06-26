@@ -35,12 +35,14 @@ public final class GuaniaoBlocks {
                     .noCollission()
                     .instabreak()
                     .sound(SoundType.SLIME_BLOCK)
+                    .randomTicks()
                     .noOcclusion()));
     public static final RegistryObject<Block> BIRD_DROPPING_STAIN_DARK = BLOCKS.register("bird_dropping_stain_dark", () ->
             new BirdDroppingStainBlock(BlockBehaviour.Properties.of()
                     .noCollission()
                     .instabreak()
                     .sound(SoundType.SLIME_BLOCK)
+                    .randomTicks()
                     .noOcclusion()));
 
     private GuaniaoBlocks() {

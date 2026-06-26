@@ -36,6 +36,7 @@ public final class GuaniaoCreativeTabs {
         output.accept((ItemLike)GuaniaoItems.BUDGERIGAR_SPAWN_EGG.get());
         output.accept((ItemLike)GuaniaoItems.SPOTTED_DOVE_SPAWN_EGG.get());
         output.accept((ItemLike)GuaniaoItems.PIGEON_SPAWN_EGG.get());
+        output.accept((ItemLike)GuaniaoItems.CROW_SPAWN_EGG.get());
     }).build());
 
     private GuaniaoCreativeTabs() {

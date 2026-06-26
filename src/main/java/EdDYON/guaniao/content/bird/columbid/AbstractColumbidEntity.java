@@ -1,5 +1,6 @@
 package EdDYON.guaniao.content.bird.columbid;
 
+import EdDYON.guaniao.content.bird.BirdGroundAnimation;
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
 import EdDYON.guaniao.content.bird.brain.BirdIntent;
 import EdDYON.guaniao.content.bird.brain.BirdSpeciesProfile;
@@ -86,7 +87,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public abstract class AbstractColumbidEntity extends TamableAnimal implements GeoEntity, FlyingAnimal, ScalableBirdModel, BirdFlightAware, BirdBathMountable, BirdBathFeedingAnimatable {
     private static final EntityDataAccessor<Integer> BEHAVIOR_STATE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MODEL_SCALE = SynchedEntityData.defineId(AbstractColumbidEntity.class, EntityDataSerializers.FLOAT);
-    private static final double WALKING_SPEED_THRESHOLD = 0.0025D;
     private static final double FLIGHT_SPEED = 0.34D;
     private static final double HIGH_FLIGHT_SPEED = 0.38D;
     private static final double ESCAPE_FLIGHT_SPEED = 0.44D;
@@ -1157,7 +1157,7 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
                 || state == ColumbidBehaviorState.SLEEPING) {
             return false;
         }
-        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
+        return BirdGroundAnimation.hasWalkMotion(this);
     }
 
     private Vec3 randomHorizontalDirection() {
@@ -1213,21 +1213,24 @@ public abstract class AbstractColumbidEntity extends TamableAnimal implements Ge
 
     private boolean shouldPlayWalkAnimation() {
         ColumbidBehaviorState state = this.getBehaviorState();
+        if (!BirdGroundAnimation.canPlayWalk(this)) {
+            return false;
+        }
+        if (state.isAirborne()
+                || state == ColumbidBehaviorState.EATING
+                || state == ColumbidBehaviorState.PREENING
+                || state == ColumbidBehaviorState.COURTING
+                || state == ColumbidBehaviorState.ROOSTING
+                || state == ColumbidBehaviorState.SLEEPING) {
+            return false;
+        }
         if (state == ColumbidBehaviorState.WALKING
                 || state == ColumbidBehaviorState.FOLLOWING_OWNER
                 || state == ColumbidBehaviorState.PAIR_FOLLOWING
                 || state == ColumbidBehaviorState.CHASING) {
             return true;
         }
-        if (this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD) {
-            return true;
-        }
-        return !this.getNavigation().isDone()
-                && state != ColumbidBehaviorState.EATING
-                && state != ColumbidBehaviorState.PREENING
-                && state != ColumbidBehaviorState.COURTING
-                && state != ColumbidBehaviorState.ROOSTING
-                && state != ColumbidBehaviorState.SLEEPING;
+        return BirdGroundAnimation.hasWalkMotion(this);
     }
 
     private IdleAnimationChoice chooseIdleAnimation() {

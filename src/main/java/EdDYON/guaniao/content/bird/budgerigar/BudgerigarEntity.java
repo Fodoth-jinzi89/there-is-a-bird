@@ -1,5 +1,6 @@
 package EdDYON.guaniao.content.bird.budgerigar;
 
+import EdDYON.guaniao.content.bird.BirdGroundAnimation;
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
 import EdDYON.guaniao.content.bird.flight.BirdFlightAware;
 import EdDYON.guaniao.content.bird.flight.BirdFlightBoids;
@@ -87,7 +88,6 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
     private static final byte TAMING_FAILED_EVENT = 6;
     private static final byte TAMING_SUCCEEDED_EVENT = 7;
     private static final ResourceLocation CHIRPY_PARTNER_ADVANCEMENT = new ResourceLocation("guaniao", "husbandry/chirpy_partner");
-    private static final double WALKING_SPEED_THRESHOLD = 0.0025D;
     private static final int MUSIC_SCAN_RADIUS = 8;
     private static final int MUSIC_GROUP_RADIUS = 10;
     private static final int AMBIENT_AIR_CRUISE_MIN_TICKS = 110;
@@ -1235,7 +1235,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
             this.setBehaviorState(BudgerigarBehaviorState.FOLLOWING);
             return;
         }
-        if (this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone()) {
+        if (BirdGroundAnimation.hasWalkMotion(this)) {
             this.setBehaviorState(BudgerigarBehaviorState.WALKING);
             return;
         }
@@ -1274,7 +1274,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
                 || state == BudgerigarBehaviorState.ROOSTING) {
             return false;
         }
-        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
+        return BirdGroundAnimation.hasWalkMotion(this);
     }
 
     private boolean shouldPlayFlyAnimation() {
@@ -1285,6 +1285,24 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
                 this.isNoGravity(),
                 this.getDeltaMovement(),
                 0);
+    }
+
+    private boolean shouldPlayWalkAnimation(BudgerigarBehaviorState state) {
+        if (!BirdGroundAnimation.canPlayWalk(this)) {
+            return false;
+        }
+        if (state == BudgerigarBehaviorState.EATING
+                || state == BudgerigarBehaviorState.PREENING
+                || state == BudgerigarBehaviorState.DANCING
+                || state == BudgerigarBehaviorState.SLEEPING
+                || state == BudgerigarBehaviorState.ROOSTING
+                || state.isAirborne()) {
+            return false;
+        }
+        return BirdGroundAnimation.hasWalkMotion(this)
+                || state == BudgerigarBehaviorState.WALKING
+                || state == BudgerigarBehaviorState.FOLLOWING
+                || state == BudgerigarBehaviorState.FORAGING;
     }
 
     private RawAnimation pickIdleAnimation() {
@@ -1322,7 +1340,7 @@ public class BudgerigarEntity extends TamableAnimal implements GeoEntity, Flying
         if (this.shouldPlayFlyAnimation()) {
             return animationState.setAndContinue(FLY_ANIMATION);
         }
-        if (this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone() || state == BudgerigarBehaviorState.WALKING) {
+        if (this.shouldPlayWalkAnimation(state)) {
             return animationState.setAndContinue(WALK_ANIMATION);
         }
         if (state == BudgerigarBehaviorState.PREENING) {

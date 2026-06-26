@@ -1,5 +1,6 @@
 package EdDYON.guaniao.content.bird.nightheron;
 
+import EdDYON.guaniao.content.bird.BirdGroundAnimation;
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
 import EdDYON.guaniao.content.bird.flight.BirdFlightAware;
 import EdDYON.guaniao.content.bird.flight.BirdFlightController;
@@ -100,9 +101,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
     private static final int ACTIVE_START_TIME = 11000;
     private static final int ACTIVE_END_TIME = 1500;
     private static final int WATER_SEARCH_RADIUS = 8;
-    private static final double WALKING_SPEED_THRESHOLD = 0.0025;
     private static final double RUNNING_SPEED_THRESHOLD = 0.018;
-    private static final double FLYING_SPEED_THRESHOLD = 0.03;
     private static final float FLIGHT_YAW_TURN_RATE = 10.0f;
     private static final float FLIGHT_PITCH_TURN_RATE = 6.0f;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache((GeoAnimatable)this);
@@ -895,7 +894,7 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
                 || state == NightHeronBehaviorState.ROOSTING) {
             return false;
         }
-        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
+        return BirdGroundAnimation.hasWalkMotion(this);
     }
 
     double heightAboveSurface() {
@@ -1081,6 +1080,20 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
                 this.groundedAirborneTicks);
     }
 
+    private boolean shouldPlayWalkAnimation(NightHeronBehaviorState state) {
+        if (!BirdGroundAnimation.hasWalkMotion(this)) {
+            return false;
+        }
+        return !state.isAirborne()
+                && state != NightHeronBehaviorState.EATING
+                && state != NightHeronBehaviorState.PREEN
+                && state != NightHeronBehaviorState.NECK_STRETCH
+                && state != NightHeronBehaviorState.REST_STAND
+                && state != NightHeronBehaviorState.LOOK_AROUND
+                && state != NightHeronBehaviorState.ALERT_FREEZE
+                && state != NightHeronBehaviorState.ROOSTING;
+    }
+
     private RawAnimation chooseFlyingAnimation() {
         NightHeronBehaviorState state = this.getBehaviorState();
         if (state == NightHeronBehaviorState.TAKEOFF || this.takeoffFlapTicks > 0) {
@@ -1104,11 +1117,13 @@ implements GeoEntity, ScalableBirdModel, BirdFlightAware, BirdBathMountable, Bir
         if (this.shouldUseFlyingAnimation()) {
             return animationState.setAndContinue(this.chooseFlyingAnimation());
         }
+        NightHeronBehaviorState state = this.getBehaviorState();
         double horizontalSpeed = this.getDeltaMovement().horizontalDistanceSqr();
-        if (this.getBehaviorState() == NightHeronBehaviorState.RUN_ESCAPE || horizontalSpeed > 0.018) {
+        if (BirdGroundAnimation.canPlayWalk(this)
+                && (state == NightHeronBehaviorState.RUN_ESCAPE || horizontalSpeed > RUNNING_SPEED_THRESHOLD)) {
             return animationState.setAndContinue(RUN_ANIMATION);
         }
-        if (horizontalSpeed > 0.0025 || !this.getNavigation().isDone()) {
+        if (this.shouldPlayWalkAnimation(state)) {
             return animationState.setAndContinue(WALK_ANIMATION);
         }
         return animationState.setAndContinue(this.pickIdleAnimation());

@@ -3,24 +3,31 @@ package EdDYON.guaniao.content.dropping;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
@@ -34,10 +41,13 @@ import java.util.UUID;
 
 public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
     public static final int MAX_AGE_TICKS = 20 * 60 * 5;
+    public static final double AREA_CAP_RADIUS = 8.0D;
+    public static final int AREA_CAP_COUNT = 8;
     private static final int FADE_TICKS = 20 * 20;
     private static final double ENTITY_HORIZONTAL_SURFACE_INSET = 0.16D;
     private static final double ENTITY_VERTICAL_SURFACE_INSET = 0.055D;
     private static final double ENTITY_RENDER_NUDGE = 0.006D;
+    private static final float RAIN_WASH_CHANCE_PER_TICK = 0.003F;
     private static final EntityDataAccessor<Integer> DATA_SURFACE_DIRECTION = SynchedEntityData.defineId(BirdDroppingSplatEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_ATTACHED_ENTITY_ID = SynchedEntityData.defineId(BirdDroppingSplatEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_ATTACHMENT_PART = SynchedEntityData.defineId(BirdDroppingSplatEntity.class, EntityDataSerializers.INT);
@@ -55,6 +65,18 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         super(entityType, level);
         this.noPhysics = true;
         this.setNoGravity(true);
+    }
+
+    public static boolean canAddSplatAt(Level level, Vec3 position) {
+        AABB area = new AABB(
+                position.x - AREA_CAP_RADIUS,
+                position.y - AREA_CAP_RADIUS,
+                position.z - AREA_CAP_RADIUS,
+                position.x + AREA_CAP_RADIUS,
+                position.y + AREA_CAP_RADIUS,
+                position.z + AREA_CAP_RADIUS
+        );
+        return level.getEntitiesOfClass(BirdDroppingSplatEntity.class, area).size() < AREA_CAP_COUNT;
     }
 
     public static BirdDroppingSplatEntity onBlock(Level level, Vec3 position, Direction direction, BlockPos anchorBlock) {
@@ -104,6 +126,17 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
             return;
         }
 
+        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+            if (this.isTouchingWater()) {
+                this.washAway(serverLevel, ParticleTypes.SPLASH);
+                return;
+            }
+            if (serverLevel.isRainingAt(this.blockPosition().above()) && this.random.nextFloat() < RAIN_WASH_CHANCE_PER_TICK) {
+                this.washAway(serverLevel, ParticleTypes.SPLASH);
+                return;
+            }
+        }
+
         if (!this.level().isClientSide && this.ageTicks >= MAX_AGE_TICKS) {
             this.discard();
         }
@@ -127,14 +160,24 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         if (!this.level().isClientSide) {
             Entity attacker = source.getEntity();
             if (!(attacker instanceof Player player) || !player.isCreative()) {
-                RandomSource random = this.level().random;
-                ItemStack drop = new ItemStack(BirdDroppingVariant.random(random).item());
-                this.spawnAtLocation(drop);
+                this.spawnAtLocation(BirdDroppingUtil.randomDroppingStack(this.level().random));
             }
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.5F, 0.9F + this.level().random.nextFloat() * 0.2F);
             this.discard();
         }
         return true;
+    }
+
+    @Override
+    public InteractionResult interact(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!stack.is(Items.BRUSH)) {
+            return InteractionResult.PASS;
+        }
+        if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel) {
+            this.cleanWithBrush(serverLevel, player, hand, stack);
+        }
+        return InteractionResult.sidedSuccess(this.level().isClientSide);
     }
 
     public Direction getSurfaceDirection() {
@@ -199,6 +242,32 @@ public class BirdDroppingSplatEntity extends Entity implements GeoEntity {
         this.setYRot(yaw);
         this.yRotO = yaw;
         this.setPos(worldPosition);
+    }
+
+    private void cleanWithBrush(ServerLevel level, Player player, InteractionHand hand, ItemStack brush) {
+        this.spawnAtLocation(BirdDroppingUtil.randomDroppingStack(level.random));
+        level.sendParticles(ParticleTypes.POOF, this.getX(), this.getY() + 0.05D, this.getZ(), 8, 0.22D, 0.06D, 0.22D, 0.01D);
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.6F, 0.85F + level.random.nextFloat() * 0.25F);
+        if (!player.getAbilities().instabuild) {
+            brush.hurtAndBreak(1, player, brokenPlayer -> brokenPlayer.broadcastBreakEvent(hand));
+        }
+        this.discard();
+    }
+
+    private void washAway(ServerLevel level, ParticleOptions particles) {
+        level.sendParticles(particles, this.getX(), this.getY() + 0.05D, this.getZ(), 5, 0.2D, 0.05D, 0.2D, 0.01D);
+        level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.SLIME_BLOCK_BREAK, SoundSource.NEUTRAL, 0.35F, 1.1F + level.random.nextFloat() * 0.25F);
+        this.discard();
+    }
+
+    private boolean isTouchingWater() {
+        BlockPos pos = this.blockPosition();
+        for (Direction direction : Direction.values()) {
+            if (this.level().getFluidState(pos.relative(direction)).is(Fluids.WATER)) {
+                return true;
+            }
+        }
+        return this.level().getFluidState(pos).is(Fluids.WATER);
     }
 
     @Override

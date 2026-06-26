@@ -5,6 +5,7 @@ public final class BirdFlightProfile {
     public static final BirdFlightProfile BUDGERIGAR = new BirdFlightProfile(3.0D, 9.0D, 0.26D, 0.34D, 0.20D, 90, 260, 4.0D, 12.0D, 3.8D, 42.0F);
     public static final BirdFlightProfile COLUMBID = new BirdFlightProfile(12.0D, 24.0D, 0.38D, 0.44D, 0.24D, 520, 820, 24.0D, 68.0D, 9.5D, 40.0F);
     public static final BirdFlightProfile NIGHT_HERON = new BirdFlightProfile(7.0D, 36.0D, 0.40D, 0.55D, 0.24D, 80, 320, 18.0D, 64.0D, 9.0D, 36.0F);
+    public static final BirdFlightProfile CROW = new BirdFlightProfile(7.0D, 18.0D, 0.34D, 0.46D, 0.22D, 150, 340, 10.0D, 34.0D, 7.0D, 38.0F);
 
     private final double minCruiseHeight;
     private final double maxCruiseHeight;

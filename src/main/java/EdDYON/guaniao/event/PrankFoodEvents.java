@@ -1,8 +1,11 @@
 package EdDYON.guaniao.event;
 
 import EdDYON.guaniao.GuaniaoMod;
+import EdDYON.guaniao.content.dropping.BirdDroppingMessageUtil;
 import EdDYON.guaniao.content.dropping.PrankFoodUtil;
 import EdDYON.guaniao.registry.GuaniaoSoundEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -77,6 +80,7 @@ public final class PrankFoodEvents {
 
             if (entity instanceof Player player) {
                 broadcastNearby(level, player);
+                player.displayClientMessage(BirdDroppingMessageUtil.randomComponent("message.guaniao.prank_food_review", random), true);
             }
         }
 
@@ -121,6 +125,22 @@ public final class PrankFoodEvents {
             List<Component> tooltip = event.getToolTip();
             if (!tooltip.isEmpty()) {
                 tooltip.set(0, PrankFoodUtil.storedPrankDisplayName(stack, tooltip.get(0)));
+            }
+            if (Screen.hasShiftDown()) {
+                tooltip.add(BirdDroppingMessageUtil.stableTooltip("tooltip.guaniao.prank_food_suspicious", stack).copy().withStyle(ChatFormatting.GRAY));
+            }
+        }
+
+        @SubscribeEvent
+        public static void onDroppingTooltip(ItemTooltipEvent event) {
+            ItemStack stack = event.getItemStack();
+            if (!PrankFoodUtil.isDropping(stack)) {
+                return;
+            }
+
+            event.getToolTip().add(Component.translatable("tooltip.guaniao.bird_dropping_fertilizer").withStyle(ChatFormatting.GRAY));
+            if (Screen.hasShiftDown()) {
+                event.getToolTip().add(BirdDroppingMessageUtil.stableTooltip("tooltip.guaniao.dropping_evidence", stack).copy().withStyle(ChatFormatting.GRAY));
             }
         }
     }

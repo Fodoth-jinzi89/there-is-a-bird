@@ -3,7 +3,6 @@ package EdDYON.guaniao.content.dropping;
 import EdDYON.guaniao.registry.GuaniaoEntityTypes;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -17,6 +16,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
@@ -31,10 +32,14 @@ import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.UUID;
+
 public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implements GeoEntity {
     private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(BirdDroppingProjectileEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_NATURAL_DROPPING = SynchedEntityData.defineId(BirdDroppingProjectileEntity.class, EntityDataSerializers.BOOLEAN);
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache((GeoAnimatable)this);
     private int lifeTicks;
+    private UUID sourceBirdUuid;
 
     public BirdDroppingProjectileEntity(EntityType<? extends BirdDroppingProjectileEntity> entityType, Level level) {
         super(entityType, level);
@@ -49,6 +54,7 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(DATA_VARIANT, BirdDroppingVariant.ONE.id());
+        this.entityData.define(DATA_NATURAL_DROPPING, false);
     }
 
     @Override
@@ -76,11 +82,20 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
             return;
         }
 
-        if (result.getEntity() instanceof LivingEntity living) {
-            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
-            if (living instanceof Player player) {
-                player.displayClientMessage(Component.translatable("message.guaniao.bird_dropping_blessing"), true);
+        Entity hit = result.getEntity();
+        if (hit instanceof Player player) {
+            if (this.isNaturalDropping()) {
+                BirdDroppingPrankHandler.handleNaturalHitPlayer(this, player);
+            } else {
+                player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.guaniao.bird_dropping_blessing"), true);
             }
+        } else if (hit instanceof Villager villager) {
+            BirdDroppingPrankHandler.handleVillagerHit(this, villager);
+        } else if (hit instanceof IronGolem golem) {
+            BirdDroppingPrankHandler.handleIronGolemHit(this, golem);
+        } else if (hit instanceof LivingEntity living) {
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
         }
 
         this.splat();
@@ -94,6 +109,11 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
             return;
         }
 
+        if (BirdDroppingPrankHandler.handleCakeHit(this, result.getBlockPos())) {
+            this.discard();
+            return;
+        }
+
         this.spawnBlockSplat(result);
         this.splat();
         this.discard();
@@ -102,6 +122,9 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
     private void spawnBlockSplat(BlockHitResult result) {
         Level level = this.level();
         if (level.getFluidState(result.getBlockPos().relative(result.getDirection())).isSource()) {
+            return;
+        }
+        if (!BirdDroppingSplatEntity.canAddSplatAt(level, result.getLocation())) {
             return;
         }
         BirdDroppingSplatEntity splat = BirdDroppingSplatEntity.onBlock(level, result.getLocation(), result.getDirection(), result.getBlockPos());
@@ -127,16 +150,37 @@ public class BirdDroppingProjectileEntity extends ThrowableItemProjectile implem
         this.entityData.set(DATA_VARIANT, variant.id());
     }
 
+    public boolean isNaturalDropping() {
+        return this.entityData.get(DATA_NATURAL_DROPPING);
+    }
+
+    public void markNaturalDropping(UUID birdUuid) {
+        this.entityData.set(DATA_NATURAL_DROPPING, true);
+        this.sourceBirdUuid = birdUuid;
+    }
+
+    public UUID getSourceBirdUuid() {
+        return this.sourceBirdUuid;
+    }
+
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Variant", this.getVariant().id());
+        tag.putBoolean("NaturalDropping", this.isNaturalDropping());
+        if (this.sourceBirdUuid != null) {
+            tag.putUUID("SourceBirdUuid", this.sourceBirdUuid);
+        }
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.setVariant(BirdDroppingVariant.byId(tag.getInt("Variant")));
+        this.entityData.set(DATA_NATURAL_DROPPING, tag.getBoolean("NaturalDropping"));
+        if (tag.hasUUID("SourceBirdUuid")) {
+            this.sourceBirdUuid = tag.getUUID("SourceBirdUuid");
+        }
     }
 
     @Override

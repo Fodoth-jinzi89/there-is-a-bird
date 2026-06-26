@@ -11,6 +11,8 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class BirdDroppingSplatRenderer extends GeoEntityRenderer<BirdDroppingSplatEntity> {
+    private static final float SPLAT_RENDER_SCALE = 0.68F;
+
     public BirdDroppingSplatRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new BirdDroppingSplatModel());
         this.shadowRadius = 0.0F;
@@ -20,6 +22,7 @@ public class BirdDroppingSplatRenderer extends GeoEntityRenderer<BirdDroppingSpl
     public void render(BirdDroppingSplatEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         poseStack.pushPose();
         applySurfaceRotation(poseStack, entity.getSurfaceDirection());
+        poseStack.scale(SPLAT_RENDER_SCALE, SPLAT_RENDER_SCALE, SPLAT_RENDER_SCALE);
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
         poseStack.popPose();
     }

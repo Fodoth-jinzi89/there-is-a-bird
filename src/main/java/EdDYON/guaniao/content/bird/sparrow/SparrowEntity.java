@@ -3,6 +3,7 @@ package EdDYON.guaniao.content.bird.sparrow;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
+import EdDYON.guaniao.content.bird.BirdGroundAnimation;
 import EdDYON.guaniao.content.bird.brain.BirdBrain;
 import EdDYON.guaniao.content.bird.brain.BirdIntent;
 import EdDYON.guaniao.content.bird.flight.BirdFlightAware;
@@ -107,7 +108,6 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
     private static final RawAnimation LOOK_AROUND_ANIMATION = RawAnimation.begin().thenPlay("animation.idle_diff_3").thenLoop("animation.idle");
     private static final RawAnimation WALK_ANIMATION = RawAnimation.begin().thenLoop("animation.walk");
     private static final RawAnimation FLY_ANIMATION = RawAnimation.begin().thenLoop("animation.fly");
-    private static final double WALKING_SPEED_THRESHOLD = 0.0018;
     private static final double SHORT_FLIGHT_SPEED = 0.24;
     private static final double ESCAPE_FLIGHT_SPEED = 0.42;
     private static final BirdFlightProfile FLIGHT_PROFILE = BirdFlightProfile.SPARROW;
@@ -684,7 +684,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                 || state.isEscape()) {
             return false;
         }
-        return this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone();
+        return BirdGroundAnimation.hasWalkMotion(this);
     }
 
     private boolean isOwnedBy(Player player) {
@@ -1727,6 +1727,17 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
                 this.airborneFlightAnimationTicks);
     }
 
+    private boolean shouldPlayWalkAnimation(SparrowBehaviorState state) {
+        if (!BirdGroundAnimation.hasWalkMotion(this)) {
+            return false;
+        }
+        return state != SparrowBehaviorState.PECKING
+                && state != SparrowBehaviorState.LOOK_AROUND
+                && state != SparrowBehaviorState.PERCHING
+                && state != SparrowBehaviorState.ROOSTING
+                && !state.isEscape();
+    }
+
     private <T extends SparrowEntity> PlayState movementController(AnimationState<T> animationState) {
         RawAnimation guidePreviewRawAnimation = this.guidePreviewAnimation.animation();
         if (guidePreviewRawAnimation != null) {
@@ -1736,7 +1747,7 @@ public class SparrowEntity extends TamableAnimal implements GeoEntity, ScalableB
         if (this.shouldPlayFlyAnimation()) {
             return animationState.setAndContinue(FLY_ANIMATION);
         }
-        if (this.getDeltaMovement().horizontalDistanceSqr() > WALKING_SPEED_THRESHOLD || !this.getNavigation().isDone()) {
+        if (this.shouldPlayWalkAnimation(state)) {
             return animationState.setAndContinue(WALK_ANIMATION);
         }
         if (state == SparrowBehaviorState.PECKING) {
